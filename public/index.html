@@ -1,128 +1,48 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
-    />
-    <title>Scramjet</title>
+/* ==== Minimal B/W overrides ==== */
+.bw {
+  background:#000; color:#fff;
+  font-family:"Courier New", ui-monospace, monospace;
+}
 
-    <link rel="shortcut icon" content="favicon.webp" />
+.bw-wrap {
+  max-width:720px; margin:12vh auto 10vh; padding:0 16px;
+  display:flex; flex-direction:column; align-items:center; gap:18px;
+}
 
-    <!-- Your existing CSS file; styles below assume you’ll add the CSS I include after this -->
-    <link rel="stylesheet" href="index.css" />
+.bw-header { text-align:center; }
+.bw-logo { width:72px; height:72px; object-fit:contain; filter:grayscale(1); }
+.bw-title { margin:8px 0 0; font-size:28px; font-weight:700; }
+.bw-sub { margin:6px 0 0; color:#ddd; font-size:12px; letter-spacing:.4px; }
 
-    <!-- Do NOT touch these: core app + transports + SW + search + page logic -->
-    <script src="/scram/scramjet.all.js"></script>
-    <script src="baremux/index.js" defer></script>
-    <script src="epoxy/index.js" defer></script>
-    <script src="register-sw.js" defer></script>
-    <script src="search.js" defer></script>
-    <script src="index.js" defer></script>
-  </head>
+.bw-form {
+  width:100%;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid #fff; border-radius:6px; padding:10px 12px;
+}
+.bw-form #sj-address {
+  all:unset; /* nuke earlier styles */
+  color:#fff; width:100%;
+  font:14px "Courier New", ui-monospace, monospace;
+}
+.bw-form #sj-address::placeholder { color:#bbb; }
+.bw-form:focus-within { outline:2px solid #fff; outline-offset:2px; }
 
-  <body class="sj-body">
-    <!-- Top bar -->
-    <header class="sj-header">
-      <div class="sj-brand">
-        <img class="logo" src="sj.png" alt="Scramjet" />
-        <span class="brand-text">Scramjet</span>
-      </div>
-      <nav class="sj-nav">
-        <a href="credits.html" class="sj-link">Credits</a>
-        <a href="https://github.com/MercuryWorkshop" class="sj-link" target="_blank" rel="noopener">Org</a>
-        <a href="https://github.com/MercuryWorkshop/Scramjet-Demo" class="sj-link" target="_blank" rel="noopener">Demo</a>
-      </nav>
-    </header>
+.bw-errors { width:100%; }
+#sj-error { color:#fff; }            /* keep it visible, no colors other than white */
+#sj-error-code {
+  background:#000; color:#fff; border:1px solid #fff;
+  padding:8px; border-radius:4px; overflow:auto;
+}
 
-    <!-- Hero/Search -->
-    <main class="sj-main">
-      <section class="sj-hero">
-        <h1 class="sj-title">Browse without handcuffs.</h1>
-        <p class="sj-subtitle">
-          Interception-based proxy to slip past lazy blocks and arbitrary browser limits.
-        </p>
+.bw-footer {
+  margin-top:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  color:#fff; font-size:13px;
+}
+.bw-footer a { color:#fff; text-decoration:none; border-bottom:1px solid transparent; }
+.bw-footer a:hover { border-bottom-color:#fff; }
+.bw-copy { opacity:.9; }
 
-        <!-- IMPORTANT: keep these IDs so search.js works -->
-        <form id="sj-form" class="sj-search">
-          <input
-            id="sj-search-engine"
-            value="https://www.google.com/search?q=%s"
-            type="hidden"
-          />
-          <input
-            id="sj-address"
-            type="text"
-            placeholder="Type a URL or search query…"
-            autocomplete="off"
-            spellcheck="false"
-            inputmode="url"
-          />
-        </form>
-
-        <!-- Optional quick suggestions (safe—don’t break IDs) -->
-        <div class="sj-quick">
-          <button class="chip" data-q="https://example.com">Open URL</button>
-          <button class="chip" data-q="privacy tools">privacy tools</button>
-          <button class="chip" data-q="webgl demos">webgl demos</button>
-          <button class="chip" data-q="tetris">tetris</button>
-        </div>
-
-        <!-- Errors (keep IDs) -->
-        <div class="sj-errors">
-          <p id="sj-error"></p>
-          <pre id="sj-error-code"></pre>
-        </div>
-      </section>
-
-      <!-- Info cards -->
-      <section class="sj-cards">
-        <article class="card">
-          <h3>What is Scramjet?</h3>
-          <p>
-            An experimental proxy focused on interception and compatibility. It’s built to keep moving even when
-            your network plays hall monitor.
-          </p>
-        </article>
-        <article class="card">
-          <h3>Heads-up</h3>
-          <p>
-            Some sites still won’t love you. That’s normal. Try a different engine query or go direct with a full URL.
-          </p>
-        </article>
-        <article class="card">
-          <h3>Project Links</h3>
-          <p>
-            <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Mercury Workshop</a> ·
-            <a href="https://github.com/MercuryWorkshop/Scramjet-Demo" target="_blank" rel="noopener">Demo</a> ·
-            <a href="credits.html">Credits</a>
-          </p>
-        </article>
-      </section>
-    </main>
-
-    <!-- Footer -->
-    <footer class="sj-footer">
-      <span>Scramjet © MW 2025</span>
-    </footer>
-
-    <!-- Required hidden iframe -->
-    <iframe style="display:none" id="sj-frame"></iframe>
-
-    <!-- Tiny inline helper: quick chips feed into sj-address without touching your existing scripts -->
-    <script>
-      (function () {
-        const chips = document.querySelectorAll('.chip');
-        const input = document.getElementById('sj-address');
-        const form = document.getElementById('sj-form');
-        chips.forEach(btn => {
-          btn.addEventListener('click', () => {
-            input.value = btn.getAttribute('data-q') || '';
-            form.requestSubmit(); // lets your existing search handler run
-          });
-        });
-      })();
-    </script>
-  </body>
-</html>
+/* make hidden frame cover screen when shown (keeps pure B/W) */
+#sj-frame {
+  border:none; position:fixed; inset:0; width:100vw; height:100vh; background:#000;
+}
