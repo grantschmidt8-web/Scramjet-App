@@ -1,69 +1,128 @@
 <!doctype html>
 <html>
-	<head>
-		<meta charset="utf-8" />
-		<meta
-			name="viewport"
-			content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
-		/>
-		<title>Scramjet</title>
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
+    />
+    <title>Scramjet</title>
 
-		<link rel="shortcut icon" content="favicon.webp" />
+    <link rel="shortcut icon" content="favicon.webp" />
 
-		<link rel="stylesheet" href="index.css" />
-		<script src="/scram/scramjet.all.js"></script>
-		<script src="baremux/index.js" defer></script>
-		<script src="epoxy/index.js" defer></script>
-		<script src="register-sw.js" defer></script>
-		<script src="search.js" defer></script>
-		<script src="index.js" defer></script>
-	</head>
+    <!-- Your existing CSS file; styles below assume you’ll add the CSS I include after this -->
+    <link rel="stylesheet" href="index.css" />
 
-	<body>
-		<div
-			title="Scramjet Logo"
-			class="flex-center logo-wrapper header-center"
-		>
-			<img class="logo" src="sj.png" alt="Scramjet" />
-			<h1>Scramjet | MW</h1>
-		</div>
-		<div class="flex-center desc left-margin">
-			<p>
-				Scramjet is an experimental interception based web proxy designed to evade internet censorship, 
-				bypass arbitrary web browser restrictions and innovate web proxy technologies.
-			</p>
-		</div>
+    <!-- Do NOT touch these: core app + transports + SW + search + page logic -->
+    <script src="/scram/scramjet.all.js"></script>
+    <script src="baremux/index.js" defer></script>
+    <script src="epoxy/index.js" defer></script>
+    <script src="register-sw.js" defer></script>
+    <script src="search.js" defer></script>
+    <script src="index.js" defer></script>
+  </head>
 
-		<form id="sj-form" class="flex-center">
-			<input
-				id="sj-search-engine"
-				value="https://www.google.com/search?q=%s"
-				type="hidden"
-			/>
-			<input id="sj-address" type="text" placeholder="Search the web freely" />
-		</form>
-		<div class="desc left-margin">
-			<p id="sj-error"></p>
-			<pre id="sj-error-code"></pre>
-		</div>
-		<footer>
-			<div>
-				<a
-					title="The Mercury Workshop GitHub organization"
-					href="https://github.com/MercuryWorkshop"
-					>Mercury Workshop</a
-				>
-				<a
-					title="The example demo app for Scramjet"
-					href="https://github.com/MercuryWorkshop/Scramjet-Demo"
-					>GitHub</a
-				>
-				<a title="License information" href="credits.html">Credits</a>
-			</div>
-			<div>
-				<span>Scramjet &copy; MW 2025</span>
-			</div>
-		</footer>
-		<iframe style="display: none" id="sj-frame"></iframe>
-	</body>
+  <body class="sj-body">
+    <!-- Top bar -->
+    <header class="sj-header">
+      <div class="sj-brand">
+        <img class="logo" src="sj.png" alt="Scramjet" />
+        <span class="brand-text">Scramjet</span>
+      </div>
+      <nav class="sj-nav">
+        <a href="credits.html" class="sj-link">Credits</a>
+        <a href="https://github.com/MercuryWorkshop" class="sj-link" target="_blank" rel="noopener">Org</a>
+        <a href="https://github.com/MercuryWorkshop/Scramjet-Demo" class="sj-link" target="_blank" rel="noopener">Demo</a>
+      </nav>
+    </header>
+
+    <!-- Hero/Search -->
+    <main class="sj-main">
+      <section class="sj-hero">
+        <h1 class="sj-title">Browse without handcuffs.</h1>
+        <p class="sj-subtitle">
+          Interception-based proxy to slip past lazy blocks and arbitrary browser limits.
+        </p>
+
+        <!-- IMPORTANT: keep these IDs so search.js works -->
+        <form id="sj-form" class="sj-search">
+          <input
+            id="sj-search-engine"
+            value="https://www.google.com/search?q=%s"
+            type="hidden"
+          />
+          <input
+            id="sj-address"
+            type="text"
+            placeholder="Type a URL or search query…"
+            autocomplete="off"
+            spellcheck="false"
+            inputmode="url"
+          />
+        </form>
+
+        <!-- Optional quick suggestions (safe—don’t break IDs) -->
+        <div class="sj-quick">
+          <button class="chip" data-q="https://example.com">Open URL</button>
+          <button class="chip" data-q="privacy tools">privacy tools</button>
+          <button class="chip" data-q="webgl demos">webgl demos</button>
+          <button class="chip" data-q="tetris">tetris</button>
+        </div>
+
+        <!-- Errors (keep IDs) -->
+        <div class="sj-errors">
+          <p id="sj-error"></p>
+          <pre id="sj-error-code"></pre>
+        </div>
+      </section>
+
+      <!-- Info cards -->
+      <section class="sj-cards">
+        <article class="card">
+          <h3>What is Scramjet?</h3>
+          <p>
+            An experimental proxy focused on interception and compatibility. It’s built to keep moving even when
+            your network plays hall monitor.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Heads-up</h3>
+          <p>
+            Some sites still won’t love you. That’s normal. Try a different engine query or go direct with a full URL.
+          </p>
+        </article>
+        <article class="card">
+          <h3>Project Links</h3>
+          <p>
+            <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Mercury Workshop</a> ·
+            <a href="https://github.com/MercuryWorkshop/Scramjet-Demo" target="_blank" rel="noopener">Demo</a> ·
+            <a href="credits.html">Credits</a>
+          </p>
+        </article>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="sj-footer">
+      <span>Scramjet © MW 2025</span>
+    </footer>
+
+    <!-- Required hidden iframe -->
+    <iframe style="display:none" id="sj-frame"></iframe>
+
+    <!-- Tiny inline helper: quick chips feed into sj-address without touching your existing scripts -->
+    <script>
+      (function () {
+        const chips = document.querySelectorAll('.chip');
+        const input = document.getElementById('sj-address');
+        const form = document.getElementById('sj-form');
+        chips.forEach(btn => {
+          btn.addEventListener('click', () => {
+            input.value = btn.getAttribute('data-q') || '';
+            form.requestSubmit(); // lets your existing search handler run
+          });
+        });
+      })();
+    </script>
+  </body>
 </html>
