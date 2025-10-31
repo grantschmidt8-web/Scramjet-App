@@ -4,192 +4,88 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Scramjet</title>
-
     <link rel="shortcut icon" content="favicon.webp" />
-    <!-- No external CSS file needed; merged below -->
+
+    <!-- ======= MERGED CSS (black & white, minimal) ======= -->
     <style>
-      /* ===== Your original index.css (base) ===== */
-      @import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap");
-
+      /* Base: monochrome, no fluff */
+      :root { --fg:#fff; --bg:#000; }
+      html,body { height:100%; }
       body {
-        font-family: "Roboto", Arial, Helvetica, sans-serif;
-        margin: 0;
-        background: #111;
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
+        margin:0;
+        background:var(--bg);
+        color:var(--fg);
+        font:16px/1.5 "Courier New", ui-monospace, monospace;
       }
 
-      .flex-center { display: flex; justify-content: center; }
-
-      .header-center {
-        align-items: center;
-        flex-direction: column;
-        margin-top: 10%;
+      /* Layout: left-aligned, tight vertical rhythm */
+      .wrap {
+        max-width:780px;
+        margin:12vh auto 10vh;
+        padding:0 18px;
       }
 
-      .left-margin { margin: 0px 16px; }
-
-      #sj-frame {
-        border: none;
-        position: absolute;
-        top: 0; left: 0;
-        width: 100vw; height: 100vh;
-        background-color: #111;
+      /* Header block */
+      .brand {
+        display:flex; align-items:center; gap:12px;
+        margin-bottom:18px;
+      }
+      .brand-logo{
+        width:28px; height:28px; object-fit:contain; filter:grayscale(1);
+      }
+      .brand h1{
+        margin:0; font-size:20px; font-weight:700; letter-spacing:.3px;
+      }
+      .tag {
+        margin:0; color:#d9d9d9; font-size:12px; letter-spacing:.25px;
       }
 
-      #sj-error { color: #ff6666 !important; white-space: pre-wrap; }
+      /* Hero title (plain text, no gradients) */
+      .title{ margin:32px 0 8px; font-size:34px; font-weight:700; }
+      .subtitle{ margin:0 0 18px; color:#ddd; font-size:13px; }
 
-      #sj-error-code {
-        font-size: 12px;
-        color: #fff;
-        font-family: "Courier New", Courier, monospace;
+      /* Search form (keeps Scramjet IDs) */
+      .bar {
+        display:flex; align-items:center;
+        border:1px solid #fff; border-radius:4px;
+        padding:10px 12px; margin:12px 0 8px;
+      }
+      /* IMPORTANT: don’t rename these IDs */
+      #sj-address{
+        all:unset; color:#fff; width:100%;
+        font:16px/1.4 "Courier New", ui-monospace, monospace;
+      }
+      #sj-address::placeholder{ color:#bfbfbf; }
+      .bar:focus-within{ outline:2px solid #fff; outline-offset:2px; }
+
+      /* Error area */
+      .errors{ margin-top:8px; }
+      #sj-error{ color:#fff; white-space:pre-wrap; margin:0; }
+      #sj-error-code{ background:#000; color:#fff; border:1px solid #fff; padding:8px; border-radius:4px; overflow:auto; margin-top:6px; font-size:12px; }
+
+      /* Footer links */
+      .links{
+        display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+        margin-top:20px; font-size:13px;
+      }
+      .links a{ color:#fff; text-decoration:none; border-bottom:1px solid transparent; }
+      .links a:hover{ border-bottom-color:#fff; }
+
+      /* Hidden frame: full-viewport when shown */
+      #sj-frame{
+        border:none; position:fixed; inset:0; width:100vw; height:100vh; background:#000; display:none;
       }
 
-      .logo { height: 25vh; }
-
-      .logo-wrapper .text { font-size: 75px; color: #fff; }
-
-      .logo-wrapper h1 { color: white; }
-
-      footer {
-        margin: 0 16px;
-        margin-top: auto;
-        display: flex;
-        flex-direction: column;
-        line-height: 30px;
-        margin-bottom: 20px;
-      }
-
-      footer > div {
-        display: flex;
-        justify-content: left;
-        align-items: center;
-        flex-wrap: wrap;
-        margin-bottom: 15px;
-      }
-
-      footer a, footer span {
-        margin: 0 15px;
-        text-decoration: none;
-        color: #fff;
-        font-size: 15px;
-      }
-
-      footer a { cursor: pointer; }
-      footer a:hover { text-decoration: underline; }
-
-      .desc p { width: 560px; color: rgba(253, 253, 253, 0.514); }
-
-      #sj-address {
-        background: none;
-        font-family: inherit;
-        padding: 0px 17px;
-        height: 48px;
-        border: 1px solid rgb(255, 255, 255, 0.2);
-        color: var(--text-color);
-        border-radius: 3px;
-        outline: none;
-        width: 350px;
-        margin-top: 5px;
-        border-radius: 50px;
-        color: #fff;
-        transition: border-radius 0.1s;
-      }
-
-      #sj-address:focus {
-        border: 1px solid rgba(253, 253, 253, 0.514);
-        border-radius: 6px;
-      }
-
-      .credit {
-        border-radius: 10px;
-        padding: 10px;
-        display: block;
-        border: #fff 1px solid;
-        color: #fff;
-        display: flex;
-        flex-wrap: wrap;
-        margin-bottom: 15px;
-      }
-
-      .credit label { margin-left: auto; margin-right: 15px; }
-
-      .credit a, .credit label {
-        color: white;
-        text-decoration: underline;
-        text-align: right;
-      }
-
-      .credit pre { display: none; width: 100%; }
-
-      .credit label::after { content: "show license"; cursor: pointer; }
-
-      .credit input:checked + label::after { content: "hide license"; }
-
-      .credit input:checked ~ pre { display: block; }
-
-      :root { --text-color: #fff; } /* define from your earlier use */
-
-      /* ===== Minimal Black & White overrides (scoped) ===== */
-      .bw {
-        background:#000; color:#fff;
-        font-family:"Courier New", ui-monospace, monospace;
-        display:block; /* defeat body flex from base */
-        min-height:100vh;
-      }
-      .bw-wrap {
-        max-width:720px; margin:12vh auto 10vh; padding:0 16px;
-        display:flex; flex-direction:column; align-items:center; gap:18px;
-      }
-      .bw-header { text-align:center; }
-      .bw-logo { width:72px; height:72px; object-fit:contain; filter:grayscale(1); }
-      .bw-title { margin:8px 0 0; font-size:28px; font-weight:700; }
-      .bw-sub { margin:6px 0 0; color:#ddd; font-size:12px; letter-spacing:.4px; }
-
-      .bw-form {
-        width:100%;
-        display:flex; align-items:center; justify-content:center;
-        border:1px solid #fff; border-radius:6px; padding:10px 12px;
-      }
-      .bw-form #sj-address{
-        all:unset; /* nuke earlier styles */
-        color:#fff; width:100%;
-        font:14px "Courier New", ui-monospace, monospace;
-        line-height:1.4;
-      }
-      .bw-form #sj-address::placeholder { color:#bbb; }
-      .bw-form:focus-within { outline:2px solid #fff; outline-offset:2px; }
-
-      .bw-errors { width:100%; }
-      .bw #sj-error { color:#fff !important; } /* stay monochrome */
-      .bw #sj-error-code {
-        background:#000; color:#fff; border:1px solid #fff;
-        padding:8px; border-radius:4px; overflow:auto;
-      }
-
-      .bw-footer {
-        margin-top:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;
-        color:#fff; font-size:13px; justify-content:center;
-      }
-      .bw-footer a { color:#fff; text-decoration:none; border-bottom:1px solid transparent; }
-      .bw-footer a:hover { border-bottom-color:#fff; }
-      .bw-copy { opacity:.9; }
-
-      /* Frame covers viewport when shown; pure B/W */
-      .bw #sj-frame {
-        border:none; position:fixed; inset:0; width:100vw; height:100vh; background:#000;
-      }
-
+      /* Small screens */
       @media (max-width:640px){
-        .bw-wrap{ margin:10vh auto 8vh; }
-        .bw-title{ font-size:24px; }
-        .bw-form{ padding:14px 16px; }
-        .bw-form #sj-address{ font-size:16px; }
+        .wrap{ margin:10vh auto 8vh; }
+        .title{ font-size:28px; }
+        .bar{ padding:12px 14px; }
+        #sj-address{ font-size:16px; }
       }
     </style>
 
-    <!-- Core Scramjet app and transports (unchanged) -->
+    <!-- Core Scramjet app + transports + SW + your page logic -->
     <script src="/scram/scramjet.all.js"></script>
     <script src="baremux/index.js" defer></script>
     <script src="epoxy/index.js" defer></script>
@@ -198,36 +94,39 @@
     <script src="index.js" defer></script>
   </head>
 
-  <body class="bw">
-    <main class="bw-wrap">
-      <header class="bw-header">
-        <img src="sj.png" alt="Scramjet" class="bw-logo" />
-        <h1 class="bw-title">Scramjet</h1>
-        <p class="bw-sub">simple · fast · unstyled</p>
-      </header>
-
-      <!-- Keep Scramjet IDs intact -->
-      <form id="sj-form" class="bw-form">
-        <input id="sj-search-engine" value="https://www.google.com/search?q=%s" type="hidden" />
-        <input id="sj-address" type="text" placeholder="URL or search…" autocomplete="off" spellcheck="false" inputmode="url" />
-      </form>
-
-      <div class="bw-errors">
-        <p id="sj-error"></p>
-        <pre id="sj-error-code"></pre>
+  <body>
+    <main class="wrap">
+      <div class="brand">
+        <img src="sj.png" class="brand-logo" alt="Scramjet" />
+        <h1>Scramjet</h1>
       </div>
 
-      <footer class="bw-footer">
+      <h2 class="title">Browse. Quietly.</h2>
+      <p class="subtitle">No color. No clutter. Just a box that works.</p>
+
+      <!-- Keep these IDs EXACT for search.js -->
+      <form id="sj-form" class="bar" autocomplete="off">
+        <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
+        <input id="sj-address" type="text" placeholder="URL or search…" spellcheck="false" inputmode="url" />
+      </form>
+
+      <section class="errors">
+        <p id="sj-error"></p>
+        <pre id="sj-error-code"></pre>
+      </section>
+
+      <nav class="links">
+        <a href="credits.html">Credits</a>
+        <span>·</span>
         <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Org</a>
         <span>·</span>
         <a href="https://github.com/MercuryWorkshop/Scramjet-Demo" target="_blank" rel="noopener">Demo</a>
         <span>·</span>
-        <a href="credits.html">Credits</a>
-        <span class="bw-copy">· Scramjet © MW 2025</span>
-      </footer>
+        <span>MW © 2025</span>
+      </nav>
     </main>
 
-    <!-- Required hidden iframe -->
-    <iframe id="sj-frame" style="display:none"></iframe>
+    <!-- required by Scramjet -->
+    <iframe id="sj-frame"></iframe>
   </body>
 </html>
