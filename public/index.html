@@ -6,7 +6,6 @@
     <title>Scramjet</title>
     <link rel="shortcut icon" content="favicon.webp" />
 
-    <!-- ===== MERGED CSS (minimal B/W, no top brand) ===== -->
     <style>
       :root { --fg:#fff; --bg:#000; }
       html,body { height:100%; }
@@ -23,11 +22,10 @@
         padding:0 18px;
       }
 
-      /* Bring back the hero line */
       .title { margin:0 0 10px; font-size:34px; font-weight:700; }
       .subtitle { margin:0 0 18px; color:#ddd; font-size:13px; }
 
-      /* Search form (keeps Scramjet IDs) */
+      /* Search form (keep Scramjet IDs) */
       .bar {
         display:flex; align-items:center;
         border:1px solid #fff; border-radius:4px;
@@ -41,7 +39,6 @@
       #sj-address::placeholder{ color:#bfbfbf; }
       .bar:focus-within{ outline:2px solid #fff; outline-offset:2px; }
 
-      /* Footer links */
       .links{
         display:flex; flex-wrap:wrap; gap:10px; align-items:center;
         margin-top:16px; font-size:13px;
@@ -49,13 +46,17 @@
       .links a{ color:#fff; text-decoration:none; border-bottom:1px solid transparent; }
       .links a:hover{ border-bottom-color:#fff; }
 
-      /* Hide error UI (hooks stay in DOM) */
-      #sj-error, #sj-error-code { display:none !important; }
+      /* Keep hooks but hide error UI */
+      #sj-error, #sj-error-code { display:none; }
 
-      /* Keep iframe hidden until used */
+      /* IMPORTANT: allow JS to show the iframe */
       #sj-frame{
-        display:none !important;
-        border:none; position:fixed; inset:0; width:100vw; height:100vh; background:#000;
+        display:none;              /* JS will set display:block */
+        border:none;
+        position:fixed; inset:0;
+        width:100vw; height:100vh;
+        background:#000;
+        z-index: 9999;             /* ensure it covers the homepage when shown */
       }
 
       @media (max-width:640px){
@@ -77,24 +78,23 @@
 
   <body>
     <main class="wrap">
-      <!-- Hero line restored; still no top title/icon -->
-      <h2 class="title">PROJECT TRINITY</h2>
+      <h2 class="title">Browse. Quietly.</h2>
       <p class="subtitle">Plain black & white. Just a box that works.</p>
 
-      <!-- Keep these IDs EXACT for search.js -->
+      <!-- IDs must match Scramjet scripts -->
       <form id="sj-form" class="bar" autocomplete="off">
         <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
         <input id="sj-address" type="text" placeholder="URL or search…" spellcheck="false" inputmode="url" />
       </form>
 
-      <!-- Hooks exist but hidden via CSS -->
+      <!-- Hooks exist but hidden -->
       <p id="sj-error"></p>
       <pre id="sj-error-code"></pre>
 
       <nav class="links">
         <a href="credits.html">Credits</a>
         <span>·</span>
-        <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Org</a>
         <span>·</span>
         <a href="https://github.com/MercuryWorkshop/Scramjet-Demo" target="_blank" rel="noopener">Demo</a>
         <span>·</span>
@@ -102,7 +102,7 @@
       </nav>
     </main>
 
-    <!-- Required by Scramjet -->
+    <!-- Scramjet's rendering surface -->
     <iframe id="sj-frame"></iframe>
   </body>
 </html>
