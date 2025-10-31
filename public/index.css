@@ -1,20 +1,8 @@
-/* ===== Base font (yours) ===== */
+/* ===== Your original base ===== */
 @import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap");
 
-/* ===== Design tokens (new) ===== */
-:root {
-  --bg: #111;
-  --panel: #111214;
-  --line: #1e1f23;
-  --text: #e9e9ea;
-  --muted: #a1a1a6;
-  --accent: #ffffff;
-  --radius: 16px;
-  --shadow: 0 8px 28px rgba(0,0,0,0.45);
-  --text-color: #fff; /* used by your #sj-address rule */
-}
+:root { --text-color: #fff; }
 
-/* ===== Your original base ===== */
 body {
   font-family: "Roboto", Arial, Helvetica, sans-serif;
   margin: 0;
@@ -42,10 +30,7 @@ body {
   background-color: #111;
 }
 
-#sj-error {
-  color: #ff6666 !important;
-  white-space: pre-wrap;
-}
+#sj-error { color: #ff6666 !important; white-space: pre-wrap; }
 
 #sj-error-code {
   font-size: 12px;
@@ -54,23 +39,31 @@ body {
 }
 
 .logo { height: 25vh; }
-
 .logo-wrapper .text { font-size: 75px; color: #fff; }
-
 .logo-wrapper h1 { color: white; }
 
 footer {
-  margin: 0 16px; margin-top: auto; margin-bottom: 20px;
-  display: flex; flex-direction: column; line-height: 30px;
+  margin: 0 16px;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  line-height: 30px;
+  margin-bottom: 20px;
 }
 
 footer > div {
-  display: flex; justify-content: left; align-items: center;
-  flex-wrap: wrap; margin-bottom: 15px;
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
 }
 
 footer a, footer span {
-  margin: 0 15px; text-decoration: none; color: #fff; font-size: 15px;
+  margin: 0 15px;
+  text-decoration: none;
+  color: #fff;
+  font-size: 15px;
 }
 
 footer a { cursor: pointer; }
@@ -78,7 +71,6 @@ footer a:hover { text-decoration: underline; }
 
 .desc p { width: 560px; color: rgba(253, 253, 253, 0.514); }
 
-/* Your address input */
 #sj-address {
   background: none;
   font-family: inherit;
@@ -86,23 +78,19 @@ footer a:hover { text-decoration: underline; }
   height: 48px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: var(--text-color);
-  border-radius: 50px;
   outline: none;
   width: 350px;
   margin-top: 5px;
-  transition: border-radius 0.1s, border-color 0.2s, box-shadow 0.2s;
+  border-radius: 50px;
   color: #fff;
+  transition: border-radius 0.1s, border-color 0.2s, box-shadow 0.2s;
 }
-
-#sj-address::placeholder { color: #7f818a; }
 
 #sj-address:focus {
   border: 1px solid rgba(253, 253, 253, 0.514);
   border-radius: 6px;
-  box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
 }
 
-/* Credits disclosure */
 .credit {
   border-radius: 10px;
   padding: 10px;
@@ -113,124 +101,70 @@ footer a:hover { text-decoration: underline; }
   margin-bottom: 15px;
 }
 .credit label { margin-left: auto; margin-right: 15px; }
-.credit a, .credit label {
-  color: white; text-decoration: underline; text-align: right;
-}
+.credit a, .credit label { color: white; text-decoration: underline; text-align: right; }
 .credit pre { display: none; width: 100%; }
 .credit label::after { content: "show license"; cursor: pointer; }
 .credit input:checked + label::after { content: "hide license"; }
 .credit input:checked ~ pre { display: block; }
 
-/* ===== New homepage layout classes (won't touch your IDs) ===== */
-
-/* Optional extra styling if body has sj-body class */
-body.sj-body {
-  color: var(--text);
-  background: radial-gradient(1000px 600px at 30% -10%, #16171a 0%, var(--bg) 55%) no-repeat fixed;
-  -webkit-font-smoothing: antialiased;
+/* ===== Minimal Black & White overrides (scoped to .bw) ===== */
+.bw {
+  background:#000; color:#fff;
+  font-family:"Courier New", ui-monospace, monospace;
+  display:block; /* neutralize body flex */
+  min-height:100vh;
 }
 
-/* Header bar */
-.sj-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 22px; border-bottom: 1px solid var(--line);
-  position: sticky; top: 0;
-  background: rgba(17,17,17,0.7);
-  backdrop-filter: blur(6px);
-  z-index: 10;
+.bw-wrap {
+  max-width:720px; margin:12vh auto 10vh; padding:0 16px;
+  display:flex; flex-direction:column; align-items:center; gap:18px;
 }
 
-.sj-brand { display: flex; align-items: center; gap: 10px; }
-.sj-brand .logo { width: 28px; height: 28px; filter: drop-shadow(0 0 6px rgba(255,255,255,0.15)); }
-.brand-text { letter-spacing: .4px; font-weight: 700; color: #fff; }
+.bw-header { text-align:center; }
+.bw-logo { width:72px; height:72px; object-fit:contain; filter:grayscale(1); }
+.bw-title { margin:8px 0 0; font-size:28px; font-weight:700; }
+.bw-sub { margin:6px 0 0; color:#ddd; font-size:12px; letter-spacing:.4px; }
 
-.sj-nav { display: flex; gap: 14px; }
-.sj-link { color: var(--muted); text-decoration: none; font-size: 14px; }
-.sj-link:hover { color: #fff; text-decoration: underline; }
-
-/* Main container */
-.sj-main { max-width: 980px; margin: 0 auto; padding: 48px 16px 72px; }
-
-/* Hero block */
-.sj-hero {
-  display: grid; gap: 14px; padding: 28px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+.bw-form {
+  width:100%;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid #fff; border-radius:6px; padding:10px 12px;
 }
 
-.sj-title { margin: 0; font-size: 32px; line-height: 1.2; color: #fff; }
-.sj-subtitle { margin: 0; color: var(--muted); }
-
-/* Search row (wraps your #sj-address and keeps IDs intact) */
-.sj-search {
-  margin-top: 6px;
-  display: flex; align-items: center;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--panel);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.035), 0 6px 20px rgba(0,0,0,0.35);
-  padding: 10px 14px;
+.bw-form #sj-address{
+  all:unset;           /* wipe legacy styles inside minimal form */
+  color:#fff; width:100%;
+  font:14px "Courier New", ui-monospace, monospace;
+  line-height:1.4;
 }
 
-/* Make your existing #sj-address fill the row nicely when inside .sj-search */
-.sj-search #sj-address {
-  width: 100%;
-  height: 40px; /* visually nicer inside pill */
-  margin-top: 0; /* remove top margin in hero */
-  border: none; /* container handles border */
-  border-radius: 0;
-  padding-left: 4px; padding-right: 4px;
+.bw-form #sj-address::placeholder { color:#bbb; }
+.bw-form:focus-within { outline:2px solid #fff; outline-offset:2px; }
+
+.bw-errors { width:100%; }
+.bw #sj-error { color:#fff !important; }
+.bw #sj-error-code {
+  background:#000; color:#fff; border:1px solid #fff;
+  padding:8px; border-radius:4px; overflow:auto;
 }
 
-/* Quick chips */
-.sj-quick { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip {
-  border: 1px solid var(--line);
-  background: #0f1012;
-  color: var(--muted);
-  padding: 6px 10px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-size: 13px;
+.bw-footer {
+  margin-top:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+  color:#fff; font-size:13px; justify-content:center;
 }
-.chip:hover { color: #fff; border-color: #2a2b30; }
+.bw-footer a { color:#fff; text-decoration:none; border-bottom:1px solid transparent; }
+.bw-footer a:hover { border-bottom-color:#fff; }
+.bw-copy { opacity:.9; }
 
-/* Errors (uses your existing IDs) */
-.sj-errors { margin-top: 6px; }
-#sj-error-code {
-  background: #0d0e10; padding: 10px; border-radius: 8px; overflow: auto;
+/* When Scramjet shows the frame, keep it pure B/W and full-viewport */
+.bw #sj-frame {
+  border:none; position:fixed; inset:0; width:100vw; height:100vh; background:#000;
 }
 
-/* Info cards */
-.sj-cards {
-  margin-top: 18px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 14px;
-}
-.card {
-  background: #0f1012;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 16px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-}
-.card h3 { margin: 0 0 8px; font-size: 16px; color: #fff; }
-.card p { margin: 0; color: var(--muted); }
-
-/* Footer (adds subtle top border to your existing footer) */
-.sj-footer {
-  max-width: 980px; margin: 24px auto 40px; padding: 16px;
-  color: var(--muted); display: flex; justify-content: center; align-items: center;
-  border-top: 1px solid var(--line);
-}
-
-/* ===== Responsive tweaks ===== */
-@media (max-width: 640px) {
-  .sj-title { font-size: 24px; }
-  .sj-hero { padding: 20px; }
-  .desc p { width: 100%; }
-  #sj-address { width: 100%; }
+/* Mobile tweaks */
+@media (max-width:640px){
+  .bw-wrap{ margin:10vh auto 8vh; }
+  .bw-title{ font-size:24px; }
+  .bw-form{ padding:14px 16px; }
+  .bw-form #sj-address{ font-size:16px; }
 }
