@@ -23,8 +23,9 @@
         padding:0 18px;
       }
 
-      /* Optional small tagline (no title/icon) */
-      .tagline { margin:0 0 14px; color:#ddd; font-size:12px; letter-spacing:.25px; }
+      /* Bring back the hero line */
+      .title { margin:0 0 10px; font-size:34px; font-weight:700; }
+      .subtitle { margin:0 0 18px; color:#ddd; font-size:13px; }
 
       /* Search form (keeps Scramjet IDs) */
       .bar {
@@ -59,6 +60,7 @@
 
       @media (max-width:640px){
         .wrap{ margin:11vh auto 9vh; }
+        .title{ font-size:28px; }
         .bar{ padding:14px 16px; }
         #sj-address{ font-size:16px; }
       }
@@ -75,8 +77,9 @@
 
   <body>
     <main class="wrap">
-      <!-- No title or icon; just a subtle tagline (optional) -->
-      <p class="tagline">simple · fast · unstyled</p>
+      <!-- Hero line restored; still no top title/icon -->
+      <h2 class="title">PROJECT TRINITY</h2>
+      <p class="subtitle">Plain black & white. Just a box that works.</p>
 
       <!-- Keep these IDs EXACT for search.js -->
       <form id="sj-form" class="bar" autocomplete="off">
@@ -91,7 +94,7 @@
       <nav class="links">
         <a href="credits.html">Credits</a>
         <span>·</span>
-        <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Org</a>
+        <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">GitHub</a>
         <span>·</span>
         <a href="https://github.com/MercuryWorkshop/Scramjet-Demo" target="_blank" rel="noopener">Demo</a>
         <span>·</span>
