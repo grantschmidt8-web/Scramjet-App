@@ -1,69 +1,253 @@
-<!doctype html>
-<html>
-	<head>
-		<meta charset="utf-8" />
-		<meta
-			name="viewport"
-			content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
-		/>
-		<title>Scramjet</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scramjet – Home</title>
+  <style>
+    :root {
+      --bg: #000;
+      --panel: #0b0b0b;
+      --text: #f2f2f2;
+      --muted: #b5b5b5;
+      --accent: #ffffff;
+      --glow: 0 0 18px rgba(255,255,255,0.12), 0 0 4px rgba(255,255,255,0.18);
+      --radius: 18px;
+      --inset: inset 0 0 0 1px rgba(255,255,255,0.18);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font-family: "Courier New", Courier, monospace; letter-spacing: 0.2px;
+      display: grid; place-items: center; padding: 28px;
+    }
 
-		<link rel="shortcut icon" content="favicon.webp" />
+    .wrap { width: min(920px, 100%); }
 
-		<link rel="stylesheet" href="index.css" />
-		<script src="/scram/scramjet.all.js"></script>
-		<script src="baremux/index.js" defer></script>
-		<script src="epoxy/index.js" defer></script>
-		<script src="register-sw.js" defer></script>
-		<script src="search.js" defer></script>
-		<script src="index.js" defer></script>
-	</head>
+    .brand {
+      display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px;
+    }
+    .brand h1 {
+      margin: 0; font-size: clamp(24px, 5vw, 40px); font-weight: 700; color: var(--text);
+      text-shadow: 0 0 12px rgba(255,255,255,0.1);
+    }
+    .brand .tag { color: var(--muted); font-size: 12px; opacity: 0.9; }
 
-	<body>
-		<div
-			title="Scramjet Logo"
-			class="flex-center logo-wrapper header-center"
-		>
-			<img class="logo" src="sj.png" alt="Scramjet" />
-			<h1>Scramjet | MW</h1>
-		</div>
-		<div class="flex-center desc left-margin">
-			<p>
-				Scramjet is an experimental interception based web proxy designed to evade internet censorship, 
-				bypass arbitrary web browser restrictions and innovate web proxy technologies.
-			</p>
-		</div>
+    .card {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--glow), var(--inset);
+    }
 
-		<form id="sj-form" class="flex-center">
-			<input
-				id="sj-search-engine"
-				value="https://www.google.com/search?q=%s"
-				type="hidden"
-			/>
-			<input id="sj-address" type="text" placeholder="Search the web freely" />
-		</form>
-		<div class="desc left-margin">
-			<p id="sj-error"></p>
-			<pre id="sj-error-code"></pre>
-		</div>
-		<footer>
-			<div>
-				<a
-					title="The Mercury Workshop GitHub organization"
-					href="https://github.com/MercuryWorkshop"
-					>Mercury Workshop</a
-				>
-				<a
-					title="The example demo app for Scramjet"
-					href="https://github.com/MercuryWorkshop/Scramjet-Demo"
-					>GitHub</a
-				>
-				<a title="License information" href="credits.html">Credits</a>
-			</div>
-			<div>
-				<span>Scramjet &copy; MW 2025</span>
-			</div>
-		</footer>
-		<iframe style="display: none" id="sj-frame"></iframe>
-	</body>
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+
+    .input {
+      width: 100%; height: 52px; padding: 0 16px; border-radius: 14px;
+      background: #0f0f0f; color: var(--text);
+      border: 1px solid rgba(255,255,255,0.25);
+      box-shadow: var(--inset);
+      outline: none;
+    }
+    .input::placeholder { color: #8a8a8a; }
+
+    .btn {
+      height: 52px; padding: 0 18px; border-radius: 14px; cursor: pointer;
+      border: 1px solid #fff; color: #000; background: #fff; font-weight: 700;
+      transition: transform .06s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+
+    .quick {
+      margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .chip { border: 1px dashed rgba(255,255,255,0.35); color: var(--text);
+      padding: 8px 10px; border-radius: 999px; cursor: pointer; font-size: 12px; opacity: .9;
+    }
+    .chip:hover { border-style: solid; }
+
+    details {
+      margin-top: 16px; border-radius: 12px; background: #0b0b0b; border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: var(--inset);
+    }
+    summary { cursor: pointer; padding: 12px 14px; color: var(--muted); }
+    .cfg { padding: 0 14px 14px; display: grid; gap: 10px; }
+    .cfg label { font-size: 12px; color: var(--muted); display:block; margin-bottom: 6px; }
+    .cfg .g { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .footer {
+      margin-top: 14px; color: var(--muted); font-size: 12px; text-align: center;
+      opacity: .8;
+    }
+
+    /* very soft white “pixel-ish” edge hint */
+    .pixel { image-rendering: pixelated; }
+
+    @media (max-width: 640px) {
+      .row { grid-template-columns: 1fr; }
+      .btn { width: 100%; }
+      .cfg .g { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="brand">
+      <h1 class="pixel">SCRAMJET</h1>
+      <span class="tag">minimal launch page</span>
+    </div>
+
+    <section class="card">
+      <div class="row">
+        <input id="url" class="input" type="text" placeholder="Enter a URL (https://example.com)" autocomplete="off" />
+        <button id="go" class="btn" title="Launch">GO</button>
+      </div>
+      <div class="quick" id="quick"></div>
+
+      <details>
+        <summary>Advanced (transport & paths)</summary>
+        <div class="cfg">
+          <div class="g">
+            <div>
+              <label for="entry">Scramjet client entry (path that accepts ?url=)</label>
+              <input id="entry" class="input" type="text" placeholder="/client/" />
+            </div>
+            <div>
+              <label for="bare">Bare‑Mux static path (served by your server)</label>
+              <input id="bare" class="input" type="text" placeholder="/baremux/" />
+            </div>
+          </div>
+          <div class="g">
+            <div>
+              <label for="wisp">WISP / Transport endpoint (optional)</label>
+              <input id="wisp" class="input" type="text" placeholder="wss://your-wisp.example/ws" />
+            </div>
+            <div>
+              <label for="blank">Open in about:blank shell (toggle per‑launch)</label>
+              <select id="blank" class="input">
+                <option value="off">Off (default)</option>
+                <option value="on">On</option>
+              </select>
+            </div>
+          </div>
+          <div class="g">
+            <button id="save" class="btn" style="border-color:#fff;background:#000;color:#fff">Save Config</button>
+            <button id="reset" class="btn" style="border-color:#fff;background:#000;color:#fff">Reset</button>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <p class="footer">Tip: paste a URL and hit Enter. We’ll prefix https:// if you forget.</p>
+  </main>
+
+  <script>
+    // --- tiny helper: ensure URL has protocol ---
+    function normalizeURL(raw) {
+      raw = (raw || "").trim();
+      if (!raw) return "";
+      try { new URL(raw); return raw; } catch (e) {}
+      // If it looks like a hostname (no spaces), add https://
+      if (/^[^\s]+\.[^\s]+/.test(raw)) return "https://" + raw;
+      return raw; // Let the client handle weird cases
+    }
+
+    // Default config; override from localStorage
+    const CONFIG = {
+      entry: "/client/", // <-- Set this to your scramjet-app entry that accepts ?url=
+      barePath: "/baremux/",
+      wisp: "",          // e.g., wss://your-wisp.example/ws (if your client uses it)
+      aboutBlank: "off",
+    };
+
+    const LS_KEY = "scramjet_home_cfg_v1";
+    const saved = JSON.parse(localStorage.getItem(LS_KEY) || "null");
+    if (saved && typeof saved === "object") Object.assign(CONFIG, saved);
+
+    // UI hooks
+    const urlInput = document.getElementById("url");
+    const goBtn = document.getElementById("go");
+    const entry = document.getElementById("entry");
+    const bare = document.getElementById("bare");
+    const wisp = document.getElementById("wisp");
+    const blank = document.getElementById("blank");
+    const quick = document.getElementById("quick");
+
+    // Paint config fields
+    function paint() {
+      entry.value = CONFIG.entry;
+      bare.value = CONFIG.barePath;
+      wisp.value = CONFIG.wisp;
+      blank.value = CONFIG.aboutBlank;
+    }
+    paint();
+
+    // Quick links you can customize freely
+    const QUICK_LINKS = [
+      "https://google.com", "https://youtube.com", "https://tiktok.com", "https://github.com"
+    ];
+    QUICK_LINKS.forEach(u => {
+      const c = document.createElement("button");
+      c.className = "chip"; c.textContent = new URL(u).hostname.replace("www.", "");
+      c.onclick = () => launch(u);
+      quick.appendChild(c);
+    });
+
+    // Save / Reset config
+    document.getElementById("save").onclick = () => {
+      CONFIG.entry = entry.value.trim() || "/client/";
+      CONFIG.barePath = bare.value.trim() || "/baremux/";
+      CONFIG.wisp = wisp.value.trim();
+      CONFIG.aboutBlank = blank.value;
+      localStorage.setItem(LS_KEY, JSON.stringify(CONFIG));
+      btnFlash("save");
+    };
+    document.getElementById("reset").onclick = () => {
+      localStorage.removeItem(LS_KEY);
+      location.reload();
+    };
+
+    // Main launch logic: redirect to your scramjet-app entry with ?url=
+    function launch(rawUrl) {
+      const target = normalizeURL(rawUrl || urlInput.value);
+      if (!target) return urlInput.focus();
+
+      // Build a URL like /client/?url=ENCODED&bare=/baremux/&wisp=wss://...
+      const base = CONFIG.entry.endsWith("/") ? CONFIG.entry : (CONFIG.entry + "/");
+      const params = new URLSearchParams({ url: target });
+      if (CONFIG.barePath) params.set("bare", CONFIG.barePath);
+      if (CONFIG.wisp) params.set("wisp", CONFIG.wisp);
+      const finalUrl = base + "?" + params.toString();
+
+      if (CONFIG.aboutBlank === "on") {
+        // Open lightweight about:blank shell that immediately navigates (simple, no fancy cloaking)
+        const win = window.open("about:blank", "_blank");
+        if (win && win.document) {
+          win.document.write("<meta http-equiv=\"refresh\" content=\"0;url=" + finalUrl.replace(/&/g, "&amp;") + "\">");
+          win.document.close();
+        } else {
+          // Pop-up blocked; just redirect current tab
+          location.href = finalUrl;
+        }
+      } else {
+        location.href = finalUrl;
+      }
+    }
+
+    goBtn.onclick = () => launch();
+    urlInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") launch();
+    });
+
+    function btnFlash(id) {
+      const el = document.getElementById(id);
+      const old = el.style.background;
+      el.style.background = "#1a1a1a"; el.style.color = "#fff";
+      setTimeout(() => { el.style.background = "#000"; el.style.color = "#fff"; }, 240);
+    }
+  </script>
+</body>
 </html>
