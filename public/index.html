@@ -6,7 +6,7 @@
     <title>Scramjet</title>
     <link rel="shortcut icon" content="favicon.webp" />
 
-    <!-- ===== MERGED CSS (minimal, monochrome) ===== -->
+    <!-- ===== MERGED CSS (minimal B/W, no top brand) ===== -->
     <style>
       :root { --fg:#fff; --bg:#000; }
       html,body { height:100%; }
@@ -23,11 +23,14 @@
         padding:0 18px;
       }
 
+      /* Optional small tagline (no title/icon) */
+      .tagline { margin:0 0 14px; color:#ddd; font-size:12px; letter-spacing:.25px; }
+
       /* Search form (keeps Scramjet IDs) */
       .bar {
         display:flex; align-items:center;
         border:1px solid #fff; border-radius:4px;
-        padding:12px 14px; margin:0; /* no extra gap above/below */
+        padding:12px 14px; margin:0;
       }
       #sj-address{
         all:unset;
@@ -45,7 +48,7 @@
       .links a{ color:#fff; text-decoration:none; border-bottom:1px solid transparent; }
       .links a:hover{ border-bottom-color:#fff; }
 
-      /* Remove error UI from view (hooks still exist) */
+      /* Hide error UI (hooks stay in DOM) */
       #sj-error, #sj-error-code { display:none !important; }
 
       /* Keep iframe hidden until used */
@@ -72,13 +75,16 @@
 
   <body>
     <main class="wrap">
-      <!-- Minimal: just the box -->
+      <!-- No title or icon; just a subtle tagline (optional) -->
+      <p class="tagline">simple · fast · unstyled</p>
+
+      <!-- Keep these IDs EXACT for search.js -->
       <form id="sj-form" class="bar" autocomplete="off">
         <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
         <input id="sj-address" type="text" placeholder="URL or search…" spellcheck="false" inputmode="url" />
       </form>
 
-      <!-- Hooks exist but hidden by CSS -->
+      <!-- Hooks exist but hidden via CSS -->
       <p id="sj-error"></p>
       <pre id="sj-error-code"></pre>
 
