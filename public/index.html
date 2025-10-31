@@ -6,10 +6,9 @@
     <title>Scramjet</title>
     <link rel="shortcut icon" content="favicon.webp" />
 
-    <!-- ===== MERGED CSS ===== -->
+    <!-- ===== MERGED CSS (minimal, monochrome) ===== -->
     <style>
       :root { --fg:#fff; --bg:#000; }
-
       html,body { height:100%; }
       body {
         margin:0;
@@ -20,25 +19,15 @@
 
       .wrap {
         max-width:780px;
-        margin:12vh auto 10vh;
+        margin:14vh auto 12vh;
         padding:0 18px;
       }
-
-      .brand {
-        display:flex; align-items:center; gap:12px;
-        margin-bottom:18px;
-      }
-      .brand-logo { width:28px; height:28px; object-fit:contain; filter:grayscale(1); }
-      .brand h1 { margin:0; font-size:20px; font-weight:700; letter-spacing:.3px; }
-
-      .title { margin:32px 0 8px; font-size:34px; font-weight:700; }
-      .subtitle { margin:0 0 18px; color:#ddd; font-size:13px; }
 
       /* Search form (keeps Scramjet IDs) */
       .bar {
         display:flex; align-items:center;
         border:1px solid #fff; border-radius:4px;
-        padding:10px 12px; margin:12px 0 0;
+        padding:12px 14px; margin:0; /* no extra gap above/below */
       }
       #sj-address{
         all:unset;
@@ -51,25 +40,23 @@
       /* Footer links */
       .links{
         display:flex; flex-wrap:wrap; gap:10px; align-items:center;
-        margin-top:18px; font-size:13px;
+        margin-top:16px; font-size:13px;
       }
       .links a{ color:#fff; text-decoration:none; border-bottom:1px solid transparent; }
       .links a:hover{ border-bottom-color:#fff; }
 
-      /* HIDE error UI entirely (keeps hooks without rendering boxes) */
+      /* Remove error UI from view (hooks still exist) */
       #sj-error, #sj-error-code { display:none !important; }
 
-      /* Hidden frame: keep off until used */
+      /* Keep iframe hidden until used */
       #sj-frame{
         display:none !important;
         border:none; position:fixed; inset:0; width:100vw; height:100vh; background:#000;
       }
 
-      /* Small screens */
       @media (max-width:640px){
-        .wrap{ margin:10vh auto 8vh; }
-        .title{ font-size:28px; }
-        .bar{ padding:12px 14px; }
+        .wrap{ margin:11vh auto 9vh; }
+        .bar{ padding:14px 16px; }
         #sj-address{ font-size:16px; }
       }
     </style>
@@ -85,21 +72,13 @@
 
   <body>
     <main class="wrap">
-      <div class="brand">
-        <img src="sj.png" class="brand-logo" alt="Scramjet" />
-        <h1>Scramjet</h1>
-      </div>
-
-      <h2 class="title">Browse. Quietly.</h2>
-      <p class="subtitle">Plain black & white. Just a box that works.</p>
-
-      <!-- Keep these IDs EXACT for search.js -->
+      <!-- Minimal: just the box -->
       <form id="sj-form" class="bar" autocomplete="off">
         <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
         <input id="sj-address" type="text" placeholder="URL or search…" spellcheck="false" inputmode="url" />
       </form>
 
-      <!-- Hooks exist but hidden via CSS -->
+      <!-- Hooks exist but hidden by CSS -->
       <p id="sj-error"></p>
       <pre id="sj-error-code"></pre>
 
