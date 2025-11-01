@@ -49,7 +49,7 @@
       /* Keep hooks but hide error UI */
       #sj-error, #sj-error-code { display:none; }
 
-      /* IMPORTANT: allow JS to show the iframe */
+      /* Allow JS to show the iframe */
       #sj-frame{
         display:none;              /* JS will set display:block */
         border:none;
@@ -67,13 +67,55 @@
       }
     </style>
 
-    <!-- Core Scramjet app + transports + SW + your page logic -->
+    <!-- Transport/runtime & your scripts (order matters) -->
+    <!-- If your app serves these at /scram, /baremux, /epoxy, keep leading slashes. -->
     <script src="/scram/scramjet.all.js"></script>
-    <script src="baremux/index.js" defer></script>
-    <script src="epoxy/index.js" defer></script>
+    <script src="/baremux/index.js" defer></script>
+    <script src="/epoxy/index.js" defer></script>
+
+    <!-- Optional: Wisp client (harmless if unused, useful if your build uses Wisp) -->
+    <script src="https://unpkg.com/wisp-js/dist/wisp.min.js" defer></script>
+
     <script src="register-sw.js" defer></script>
     <script src="search.js" defer></script>
     <script src="index.js" defer></script>
+
+    <!-- Tiny safety shim: set WISP_URL default + force HTTPS inputs BEFORE your handlers run -->
+    <script>
+      // 1) Default WISP_URL if config.js (or your code) didn't set it
+      (function(){
+        // Only set if not already defined and we're under HTTPS
+        if (!('WISP_URL' in window) && location.protocol === 'https:') {
+          window.WISP_URL = 'wss://' + location.host + '/wisp/';
+        }
+      })();
+
+      // 2) Normalize input to https/search before your existing submit handler runs
+      // Use capture=true so this fires before bubble-phase listeners in search.js
+      window.addEventListener('DOMContentLoaded', function(){
+        var form = document.getElementById('sj-form');
+        var addr = document.getElementById('sj-address');
+        if (!form || !addr) return;
+
+        function normalizeInput(q) {
+          q = (q || '').trim();
+          // bare word → search
+          if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) {
+            return 'https://www.google.com/search?q=' + encodeURIComponent(q);
+          }
+          // missing scheme → https
+          if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && q.includes('.')) {
+            return 'https://' + q;
+          }
+          // force https for http URLs
+          return q.replace(/^http:\/\//i, 'https://');
+        }
+
+        form.addEventListener('submit', function(){
+          addr.value = normalizeInput(addr.value);
+        }, true); // capture
+      });
+    </script>
   </head>
 
   <body>
