@@ -34,6 +34,22 @@
       linear-gradient(180deg, var(--grad-1) 0%, var(--grad-2) 55%, var(--grad-3) 100%);
   }
 
+  /* ===== Collapse toggle (fixed, top-right) ===== */
+  .chrome-toggle{
+    position:fixed; top:10px; right:10px; z-index:10002;
+    width:34px; height:34px; border-radius:10px;
+    border:1px solid var(--stroke); color:var(--fg);
+    background:linear-gradient(180deg, rgba(26,26,26,.95), rgba(18,18,18,.9));
+    cursor:pointer; font-size:18px; line-height:1; padding:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.03), 0 6px 18px rgba(0,0,0,.45);
+  }
+  .chrome-toggle:hover{
+    border-color:var(--accent);
+    background:linear-gradient(180deg, rgba(34,34,34,.96), rgba(22,22,22,.92));
+    transform:translateY(-1px);
+  }
+
   /* ===== Chrome (glass, darker, rounded) ===== */
   .chrome{
     position:fixed; inset:0 0 auto 0; z-index:10000;
@@ -42,6 +58,9 @@
     border-bottom:1px solid var(--stroke);
     box-shadow:var(--shadow);
   }
+  /* Hidden when collapsed */
+  html[data-collapsed="1"] .chrome{ display:none; }
+
   .row{ display:flex; align-items:center; gap:10px; padding:10px 12px; }
   .row.tabs{ border-bottom:1px solid var(--stroke); padding-bottom:8px; align-items:flex-end; }
 
@@ -123,6 +142,8 @@
 
   /* ===== Home card (neutral) ===== */
   .home{ max-width:980px; margin:calc(var(--chrome-h) + 28px) auto 18vh; padding:0 18px; }
+  html[data-collapsed="1"] .home{ margin:28px auto 18vh; } /* when collapsed, header height is 0 */
+
   .hero{
     padding:24px; border:1px solid var(--stroke); border-radius:var(--radius);
     background:linear-gradient(180deg, rgba(22,22,22,.78), rgba(14,14,14,.72));
@@ -143,10 +164,13 @@
     width:100vw; height:calc(100vh - var(--chrome-h));
     border:none; background:#0b0b0b; z-index:9999; display:none;
   }
+  html[data-collapsed="1"] #sj-frame{
+    top:0; height:100vh;   /* use full screen when header is collapsed */
+  }
 
   /* Toast */
   .toast{
-    position:fixed; top:10px; right:10px; z-index:10001;
+    position:fixed; top:10px; right:54px; z-index:10001; /* leave room for toggle */
     padding:10px 12px; border-radius:10px; border:1px solid var(--stroke);
     background:linear-gradient(180deg, rgba(20,20,20,.96), rgba(14,14,14,.9));
     box-shadow:var(--shadow); color:var(--fg); font-size:12px;
@@ -171,45 +195,35 @@
   /* HTTPS default for WISP if not set */
   (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
 
+  const LS_KEY = 'pt_chrome_collapsed';
+
   /* Header height → push iframe under it */
   function measureChrome(){
-    const c=document.querySelector('.chrome'); if(!c) return;
-    document.documentElement.style.setProperty('--chrome-h', Math.ceil(c.getBoundingClientRect().height)+'px');
-  }
-  addEventListener('resize',measureChrome);
-  addEventListener('DOMContentLoaded',measureChrome);
-
-  /* Input normalizer */
-  function normalizeInput(q){
-    q=(q||'').trim();
-    if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) return 'https://www.google.com/search?q='+encodeURIComponent(q);
-    if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) &&  q.includes('.')) return 'https://'+q;
-    return q.replace(/^http:\/\//i,'https://');
+    const collapsed = document.documentElement.dataset.collapsed === '1';
+    const c=document.querySelector('.chrome');
+    const h = collapsed || !c ? 0 : Math.ceil(c.getBoundingClientRect().height);
+    document.documentElement.style.setProperty('--chrome-h', h+'px');
   }
 
-  /* Pretty titles */
-  const BRAND_MAP = {
-    'tiktok.com':'TikTok','youtube.com':'YouTube','youtu.be':'YouTube',
-    'instagram.com':'Instagram','x.com':'X','twitter.com':'Twitter',
-    'facebook.com':'Facebook','reddit.com':'Reddit','wikipedia.org':'Wikipedia',
-    'github.com':'GitHub','google.com':'Google','openai.com':'OpenAI'
-  };
-  function titleCaseHost(host){
-    const parts = host.split('.'); const core = parts.slice(-2).join('.');
-    if (BRAND_MAP[host]) return BRAND_MAP[host];
-    if (BRAND_MAP[core]) return BRAND_MAP[core];
-    const first = (parts[0]||'').replace(/^www$/i,'') || (parts[parts.length-2]||'');
-    return first.replace(/[-_]+/g,' ').replace(/\b[a-z]/g, m => m.toUpperCase());
-  }
-  function labelFrom(urlOrQuery){
-    try { const u=new URL(urlOrQuery); return titleCaseHost(u.hostname); }
-    catch {
-      if ((urlOrQuery||'').startsWith('https://www.google.com/search?q=')) return 'Search';
-      return (urlOrQuery && urlOrQuery.length>24) ? urlOrQuery.slice(0,24)+'…' : (urlOrQuery || 'New Tab');
+  function setCollapsed(on){
+    document.documentElement.dataset.collapsed = on ? '1' : '0';
+    localStorage.setItem(LS_KEY, on ? '1' : '0');
+    measureChrome();
+    const t=document.getElementById('chrome-toggle');
+    if (t){
+      t.textContent = on ? '+' : '–';
+      t.setAttribute('aria-label', on ? 'Expand header' : 'Collapse header');
+      t.setAttribute('title', on ? 'Expand' : 'Collapse');
     }
   }
 
+  addEventListener('resize',measureChrome);
   addEventListener('DOMContentLoaded',()=>{
+    /* restore collapse state */
+    const startCollapsed = localStorage.getItem(LS_KEY) === '1';
+    setCollapsed(startCollapsed);
+
+    /* tabs/omnibox app logic */
     const tabsWrap = document.getElementById('tabs');
     const addBtn   = document.getElementById('tab-add');
     const form     = document.getElementById('sj-form');
@@ -224,6 +238,34 @@
     function toast(msg){
       const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
       document.body.appendChild(t); setTimeout(()=>t.remove(), 2200);
+    }
+
+    function normalizeInput(q){
+      q=(q||'').trim();
+      if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) return 'https://www.google.com/search?q='+encodeURIComponent(q);
+      if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) &&  q.includes('.')) return 'https://'+q;
+      return q.replace(/^http:\/\//i,'https://');
+    }
+
+    const BRAND_MAP = {
+      'tiktok.com':'TikTok','youtube.com':'YouTube','youtu.be':'YouTube',
+      'instagram.com':'Instagram','x.com':'X','twitter.com':'Twitter',
+      'facebook.com':'Facebook','reddit.com':'Reddit','wikipedia.org':'Wikipedia',
+      'github.com':'GitHub','google.com':'Google','openai.com':'OpenAI'
+    };
+    function titleCaseHost(host){
+      const parts = host.split('.'); const core = parts.slice(-2).join('.');
+      if (BRAND_MAP[host]) return BRAND_MAP[host];
+      if (BRAND_MAP[core]) return BRAND_MAP[core];
+      const first = (parts[0]||'').replace(/^www$/i,'') || (parts[parts.length-2]||'');
+      return first.replace(/[-_]+/g,' ').replace(/\b[a-z]/g, m => m.toUpperCase());
+    }
+    function labelFrom(urlOrQuery){
+      try { const u=new URL(urlOrQuery); return titleCaseHost(u.hostname); }
+      catch {
+        if ((urlOrQuery||'').startsWith('https://www.google.com/search?q=')) return 'Search';
+        return (urlOrQuery && urlOrQuery.length>24) ? urlOrQuery.slice(0,24)+'…' : (urlOrQuery || 'New Tab');
+      }
     }
 
     function updateHome(){
@@ -293,9 +335,10 @@
       }
     });
 
+    /* + tab */
     addBtn.addEventListener('click',()=>addTab());
 
-    /* Reload: reload proxied page or re-run navigation */
+    /* Reload */
     reloadBtn.addEventListener('click',()=>{
       if (!tabs.length || active<0) return;
       const proxied = frame.getAttribute('src');
@@ -311,7 +354,7 @@
       }
     });
 
-    /* ===== Mini Inspector (</> icon) ===== */
+    /* Mini Inspector (</>) */
     function disableInspector(){
       try{
         const w = frame.contentWindow; const d = w.document;
@@ -441,12 +484,22 @@
     }, true);
 
     /* Init */
-    addTab(); updateHome();
+    addTab(); updateHome(); measureChrome();
+
+    /* Toggle control */
+    const toggle = document.getElementById('chrome-toggle');
+    toggle.addEventListener('click', ()=>{
+      const now = !(document.documentElement.dataset.collapsed === '1');
+      setCollapsed(now);
+    });
   });
 </script>
 </head>
 
 <body>
+  <!-- Collapse/Expand button -->
+  <button id="chrome-toggle" class="chrome-toggle" title="Collapse" aria-label="Collapse">–</button>
+
   <!-- Fixed header -->
   <div class="chrome" role="navigation" aria-label="Browser controls">
     <!-- Row 1: Tabs -->
