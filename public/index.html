@@ -11,6 +11,7 @@
     --fg:#e6e6e6; --fg-dim:#bdbdbd; --bg:#0a0a0a;
     --grad-1:#0a0a0a; --grad-2:#0d0d0d; --grad-3:#121212;
     --stroke:#262626; --accent:#8a8a8a; --chrome-h:96px; --radius:14px;
+    --tab-h:34px;
     --shadow:0 10px 26px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.03);
   }
   *{ box-sizing:border-box } html,body{ height:100% }
@@ -23,38 +24,70 @@
       linear-gradient(180deg, var(--grad-1) 0%, var(--grad-2) 55%, var(--grad-3) 100%);
   }
 
-  .chrome{ position:fixed; inset:0 0 auto 0; z-index:10000; backdrop-filter:saturate(120%) blur(10px);
-    background:linear-gradient(180deg, rgba(18,18,18,.82), rgba(12,12,12,.68)); border-bottom:1px solid var(--stroke); box-shadow:var(--shadow); }
+  .chrome{
+    position:fixed; inset:0 0 auto 0; z-index:10000;
+    backdrop-filter:saturate(120%) blur(10px);
+    background:linear-gradient(180deg, rgba(18,18,18,.82), rgba(12,12,12,.68));
+    border-bottom:1px solid var(--stroke);
+    box-shadow:var(--shadow);
+  }
   html[data-collapsed="1"] .chrome{ display:none; }
 
   .row{ display:flex; align-items:center; gap:10px; padding:10px 12px; }
-  .row.tabs{ border-bottom:1px solid var(--stroke); padding-bottom:8px; align-items:flex-end; overflow:visible; }
+  /* Clip tab glows; remove bottom padding so tabs sit ON the border */
+  .row.tabs{
+    padding:8px 12px 0;
+    border-bottom:1px solid var(--stroke);
+    align-items:flex-end;
+    overflow:hidden; /* hides weird glow spill at the top/edges */
+  }
 
-  .tabs-wrap{ flex:1 1 auto; display:flex; align-items:flex-end; gap:8px; overflow-x:auto; padding-left:6px; scrollbar-width:none; }
+  .tabs-wrap{
+    flex:1 1 auto; display:flex; align-items:flex-end; gap:8px;
+    overflow-x:auto; padding:0 6px;
+    scrollbar-width:none; -ms-overflow-style:none;
+  }
   .tabs-wrap::-webkit-scrollbar{ display:none }
 
-  .tab{
-    position:relative; display:flex; align-items:center; gap:8px; max-width:260px; white-space:nowrap; cursor:pointer;
-    padding:6px 12px; border:1px solid var(--stroke); border-bottom-color:transparent; border-radius:18px 18px 0 0;
-    background:linear-gradient(180deg, rgba(28,28,28,.92), rgba(18,18,18,.88)); color:var(--fg);
-    box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.03); margin-bottom:-1px; z-index:1;
+  /* Tabs (same height for real tabs and + button) */
+  .tab, .tab-add{
+    height:var(--tab-h);
+    position:relative; display:flex; align-items:center; gap:8px;
+    max-width:260px; white-space:nowrap; cursor:pointer; user-select:none;
+    padding:0 12px;
+    border:1px solid var(--stroke);
+    border-bottom-color:transparent;
+    border-radius:18px 18px 0 0;
+    background:linear-gradient(180deg, rgba(28,28,28,.92), rgba(18,18,18,.88));
+    color:var(--fg);
+    box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.03);
+    margin-bottom:-1px; /* overlaps row border for a seamless top edge */
+    z-index:1;
     transition:box-shadow .12s ease, border-color .12s ease, background .12s ease;
   }
-  .tab:hover{ box-shadow:0 10px 26px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04); }
-  .tab.active{ border-color:var(--accent); border-bottom-color:#0000;
+  .tab:hover, .tab-add:hover{
+    box-shadow:0 10px 26px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .tab.active{
+    border-color:var(--accent); border-bottom-color:#0000;
     background:linear-gradient(180deg, rgba(32,32,32,.96), rgba(20,20,20,.92));
-    box-shadow:0 14px 34px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04) inset; z-index:2; }
+    box-shadow:0 14px 34px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04) inset;
+    z-index:2;
+  }
   .tab .fav{ width:16px; height:16px; border-radius:4px; object-fit:cover; flex:0 0 16px; background:#1a1a1a; border:1px solid #2a2a2a; }
   .tab .label{ overflow:hidden; text-overflow:ellipsis; color:var(--fg) }
   .tab .close{ display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:7px; color:var(--fg-dim); }
 
+  /* New tab button looks like a tab with a plus */
   .tab-add{
-    flex:0 0 auto; height:28px; border-radius:50%; border:1px solid var(--stroke);
-    color:var(--fg); background:linear-gradient(180deg, rgba(26,26,26,.95), rgba(18,18,18,.9));
-    cursor:pointer; font-size:0;
-    display:inline-flex; align-items:center; justify-content:center; margin-bottom:-1px; padding:0 0; width:28px;
+    flex:0 0 auto; max-width:none; gap:6px;
+    font-weight:700; letter-spacing:.4px;
   }
-  .tab-add img{ width:16px; height:16px; border-radius:4px; display:block; }
+  .tab-add::before{
+    content:"+";
+    display:inline-block; line-height:1; font-size:16px; color:var(--fg);
+    transform: translateY(-1px);
+  }
 
   .omnibox{ flex:1 1 auto; display:flex; align-items:center; gap:10px; padding:6px 12px; min-width:0; }
   .btn{
@@ -126,7 +159,6 @@
   }
   .chip[data-active="1"]{ outline:2px solid rgba(255,255,255,.10) }
 
-  /* Swatches (bold border + hover/active) */
   .swatch{
     width:84px; height:40px; border-radius:10px; border:2px solid var(--stroke);
     cursor:pointer; position:relative;
@@ -146,10 +178,7 @@
     content:"✓"; position:absolute; right:8px; bottom:6px; font-size:14px; color:currentColor; opacity:.9;
   }
 
-  /* Inherit theme text color in settings */
   .settings-pop, .settings-pop * { color: inherit; }
-
-  /* Show swatches for current theme only */
   :root[data-theme="dark"]  .swatch[data-theme="light"]{ display:none; }
   :root[data-theme="light"] .swatch[data-theme="dark"] { display:none; }
 
@@ -177,17 +206,17 @@
   const LS_KEY_GRAD_DARK  = 'pt_gradient_dark';
   const LS_KEY_GRAD_LIGHT = 'pt_gradient_light';
 
-  /* THEME-AWARE default icons (data URIs) */
+  /* theme-aware default icons (data URIs) */
   const DARK_FAV = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
-      '<rect width="24" height="24" rx="4" fill="#222222"/>' +
-      '<path d="M6 12h12M12 6v12" stroke="#bdbdbd" stroke-width="1.7" stroke-linecap="round"/>' +
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'+
+      '<rect width="24" height="24" rx="4" fill="#222222"/>'+
+      '<path d="M6 12h12M12 6v12" stroke="#bdbdbd" stroke-width="1.7" stroke-linecap="round"/>'+
     '</svg>'
   );
   const LIGHT_FAV = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
-      '<rect width="24" height="24" rx="4" fill="#f1f3f5" stroke="#d5d7db"/>' +
-      '<path d="M6 12h12M12 6v12" stroke="#2b2b2b" stroke-width="1.7" stroke-linecap="round"/>' +
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'+
+      '<rect width="24" height="24" rx="4" fill="#f1f3f5" stroke="#d5d7db"/>'+
+      '<path d="M6 12h12M12 6v12" stroke="#2b2b2b" stroke-width="1.7" stroke-linecap="round"/>'+
     '</svg>'
   );
   function currentDefaultFav(){
@@ -217,17 +246,14 @@
     }
   };
 
-  /* 6 gradients per theme */
+  /* gradients */
   const GRADS = {
-    // dark-side (6)
-    graphite:{ theme:'dark', sw:['#0a0a0a','#0d0d0d','#121212'] },
-    abyss:   { theme:'dark', sw:['#0a0f1a','#0b1320','#0c1726'] },
-    violet:  { theme:'dark', sw:['#120a1a','#1a0f2b','#23143a'] },
-    teal:    { theme:'dark', sw:['#071a1a','#0a2222','#0d2a2a'] },
-    slate:   { theme:'dark', sw:['#0c0d10','#101218','#141820'] },
-    obsidian:{ theme:'dark', sw:['#0b0c0e','#101318','#171b22'] },
-
-    // light-side (6)
+    graphite:{ theme:'dark',  sw:['#0a0a0a','#0d0d0d','#121212'] },
+    abyss:   { theme:'dark',  sw:['#0a0f1a','#0b1320','#0c1726'] },
+    violet:  { theme:'dark',  sw:['#120a1a','#1a0f2b','#23143a'] },
+    teal:    { theme:'dark',  sw:['#071a1a','#0a2222','#0d2a2a'] },
+    slate:   { theme:'dark',  sw:['#0c0d10','#101218','#141820'] },
+    obsidian:{ theme:'dark',  sw:['#0b0c0e','#101318','#171b22'] },
     paper:   { theme:'light', sw:['#f6f7f9','#eef0f4','#e7eaf0'] },
     linen:   { theme:'light', sw:['#faf7f2','#f2eadf','#e7dcc9'] },
     dawn:    { theme:'light', sw:['#fdf3f0','#f9e7e2','#f0d9d2'] },
@@ -251,7 +277,7 @@
   function repaintTabsForTheme(){
     const theme = localStorage.getItem(LS_KEY_THEME) || 'dark';
     const t = THEMES[theme] || THEMES.dark;
-    document.querySelectorAll('.tab').forEach(n=>{
+    document.querySelectorAll('.tab, .tab-add').forEach(n=>{
       n.style.setProperty('background', n.classList.contains('active') ? t.tabBgAct : t.tabBg);
     });
   }
@@ -285,23 +311,14 @@
   function applyThemeIcons(themeName){
     const defFav = (themeName === 'light') ? LIGHT_FAV : DARK_FAV;
 
-    // header favicon (only if it's currently a default)
     const headerFav = document.getElementById('site-favicon');
     if (headerFav){
       if (headerFav.src === '' || headerFav.src === DARK_FAV || headerFav.src === LIGHT_FAV) {
         headerFav.src = defFav;
       }
     }
-
-    // tab "+" button icon
-    const addIcon = document.getElementById('tab-add-ico');
-    if (addIcon) addIcon.src = defFav;
-
-    // any tab favicons that are still default should switch
     document.querySelectorAll('.tab .fav').forEach(img=>{
-      if (img.src === '' || img.src === DARK_FAV || img.src === LIGHT_FAV) {
-        img.src = defFav;
-      }
+      if (img.src === '' || img.src === DARK_FAV || img.src === LIGHT_FAV) img.src = defFav;
     });
   }
 
@@ -336,12 +353,13 @@
     document.querySelectorAll('.hero').forEach(n=>n.style.setProperty('background', t.cardBg));
     document.querySelectorAll('.bar').forEach(n=>n.style.setProperty('background', t.barBg));
     document.querySelectorAll('.btn').forEach(n=>n.style.setProperty('background', t.btnBg));
+    document.querySelectorAll('.tab, .tab-add').forEach(n=>n.style.setProperty('background', n.classList.contains('active') ? t.tabBgAct : t.tabBg));
     document.getElementById('sj-frame')?.style.setProperty('background', t.iframeBg);
 
     repaintSettings(name);
     localStorage.setItem(LS_KEY_THEME, name);
     repaintTabsForTheme();
-    applyThemeIcons(name);           /* NEW: swap plus + default favs with theme */
+    applyThemeIcons(name);
   }
 
   function applyGradientToUIActiveState(){
@@ -502,7 +520,7 @@
       addTab(); 
     });
 
-    reloadBtn.addEventListener('click',()=>{
+    document.getElementById('reload').addEventListener('click',()=>{
       if (!tabs.length || active<0) return;
       const proxied = frame.getAttribute('src');
       if (proxied) { try { frame.contentWindow.location.reload(); } catch { frame.src = proxied; } }
@@ -588,7 +606,7 @@
     frame.addEventListener('load', ()=>setTimeout(updateTabMetaFromFrame, 150));
     setInterval(updateTabMetaFromFrame, 900);
 
-    /* Settings popover (unchanged) */
+    /* Settings popover */
     function openSettingsAtButton(btn){
       const curTheme = document.documentElement.dataset.theme || 'dark';
       const curGrad  = (curTheme==='light'
@@ -655,17 +673,6 @@
       });
     });
 
-    /* Initial UI */
-    // replace tab-add text with theme icon
-    const addBtnImg = document.createElement('img');
-    addBtnImg.id = 'tab-add-ico';
-    addBtnImg.alt = '+';
-    addBtnImg.referrerPolicy = 'no-referrer';
-    addBtnImg.crossOrigin = 'anonymous';
-    addBtnImg.src = currentDefaultFav();
-    document.getElementById('tab-add').textContent = '';
-    document.getElementById('tab-add').appendChild(addBtnImg);
-
     addTab(); updateHome(); measureChrome();
   });
 </script>
@@ -675,7 +682,7 @@
   <div class="chrome" role="navigation" aria-label="Browser controls">
     <div class="row tabs">
       <div class="tabs-wrap" id="tabs" role="tablist" aria-label="Tabs">
-        <button id="tab-add" class="tab-add" title="New tab">+</button>
+        <button id="tab-add" class="tab-add" title="New tab"></button>
       </div>
     </div>
     <div class="row">
@@ -713,7 +720,6 @@
   <p id="sj-error"></p>
   <pre id="sj-error-code"></pre>
 
-  <!-- Settings Popover -->
   <div id="settings-pop" class="settings-pop" role="dialog" aria-modal="false" aria-labelledby="settings-title">
     <div class="settings-group">
       <h4 id="settings-title">Theme</h4>
@@ -725,14 +731,12 @@
     <div class="settings-group">
       <h4>Gradient</h4>
       <div class="settings-row">
-        <!-- Dark set (6) -->
         <div class="swatch" data-theme="dark" data-value="graphite" style="background:linear-gradient(180deg,#0a0a0a,#0d0d0d 55%,#121212)"></div>
         <div class="swatch" data-theme="dark" data-value="abyss"    style="background:linear-gradient(180deg,#0a0f1a,#0b1320 55%,#0c1726)"></div>
         <div class="swatch" data-theme="dark" data-value="violet"   style="background:linear-gradient(180deg,#120a1a,#1a0f2b 55%,#23143a)"></div>
         <div class="swatch" data-theme="dark" data-value="teal"     style="background:linear-gradient(180deg,#071a1a,#0a2222 55%,#0d2a2a)"></div>
         <div class="swatch" data-theme="dark" data-value="slate"    style="background:linear-gradient(180deg,#0c0d10,#101218 55%,#141820)"></div>
         <div class="swatch" data-theme="dark" data-value="obsidian" style="background:linear-gradient(180deg,#0b0c0e,#101318 55%,#171b22)"></div>
-        <!-- Light set (6) -->
         <div class="swatch" data-theme="light" data-value="paper"   style="background:linear-gradient(180deg,#f6f7f9,#eef0f4 55%,#e7eaf0)"></div>
         <div class="swatch" data-theme="light" data-value="linen"   style="background:linear-gradient(180deg,#faf7f2,#f2eadf 55%,#e7dcc9)"></div>
         <div class="swatch" data-theme="light" data-value="dawn"    style="background:linear-gradient(180deg,#fdf3f0,#f9e7e2 55%,#f0d9d2)"></div>
