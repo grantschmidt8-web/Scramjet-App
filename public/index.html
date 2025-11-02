@@ -7,111 +7,163 @@
 <link rel="shortcut icon" content="favicon.webp" />
 
 <style>
-  :root{ --fg:#fff; --bg:#000; --chrome-h:84px; }
+  :root{
+    --fg:#e9ecf1;
+    --fg-dim:#c8ced8;
+    --bg:#0b0f14;
+    --grad-1:#0b0f14;
+    --grad-2:#111826;
+    --grad-3:#0c1a2a;
+    --glass:#0f1420aa;       /* translucent glass */
+    --stroke:#2a3242;        /* subtle border */
+    --accent:#76a8ff;        /* highlight line/outline */
+    --chrome-h:96px;         /* auto-updated at runtime */
+    --radius:14px;           /* global roundness */
+    --shadow:0 10px 30px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+
   *{ box-sizing:border-box }
   html,body{ height:100% }
-  body{ margin:0; background:var(--bg); color:var(--fg); font:14px/1.35 "Courier New",ui-monospace,monospace }
+  body{
+    margin:0; color:var(--fg);
+    font:14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", "Courier New", ui-monospace, monospace;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(118,168,255,.18) 0%, rgba(118,168,255,0) 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(130,255,174,.12) 0%, rgba(130,255,174,0) 60%),
+      linear-gradient(180deg, var(--grad-1) 0%, var(--grad-2) 55%, var(--grad-3) 100%);
+  }
 
-  /* ===== Fixed, edge-to-edge header (tabs row + address row) ===== */
+  /* ===== Chrome (edge-to-edge, glass, rounded) ===== */
   .chrome{
     position:fixed; inset:0 0 auto 0; z-index:10000;
-    background:#000; border-bottom:1px solid #fff;
+    backdrop-filter:saturate(130%) blur(12px);
+    background:linear-gradient(180deg, rgba(22,28,40,.75), rgba(14,18,28,.55));
+    border-bottom:1px solid var(--stroke);
+    box-shadow:var(--shadow);
   }
-  .row{ display:flex; align-items:center; gap:8px; padding:6px 8px; }
-  .row.tabs{
-    border-bottom:1px solid #fff; align-items:flex-end; padding-bottom:0;
-  }
+  .row{ display:flex; align-items:center; gap:10px; padding:10px 12px; }
+  .row.tabs{ border-bottom:1px solid var(--stroke); padding-bottom:8px; align-items:flex-end; }
+
   .tabs-wrap{
-    flex:1 1 auto; display:flex; align-items:flex-end; gap:6px;
+    flex:1 1 auto; display:flex; align-items:flex-end; gap:8px;
     overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;
+    padding-left:6px;
   }
   .tabs-wrap::-webkit-scrollbar{ display:none }
 
-  /* Tabs */
+  /* ===== Tabs — pilled, elevated, no cutoff ===== */
   .tab{
-    position:relative; display:flex; align-items:center; gap:6px;
-    padding:4px 10px;
-    border:1px solid #444; border-bottom-color:transparent;
-    border-radius:10px 10px 0 0; background:#000;
-    cursor:pointer; white-space:nowrap; max-width:220px; user-select:none;
+    position:relative; display:flex; align-items:center; gap:8px;
+    max-width:240px; white-space:nowrap; user-select:none; cursor:pointer;
+    padding:6px 12px;
+    border:1px solid var(--stroke);
+    border-bottom-color:transparent;
+    border-radius:18px 18px 0 0;
+    background:linear-gradient(180deg, rgba(22,28,40,.85), rgba(14,18,28,.8));
+    color:var(--fg);
+    box-shadow:0 6px 18px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
     margin-bottom:-1px; z-index:1;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
   }
-  .tab span.label{ overflow:hidden; text-overflow:ellipsis }
-  .tab.active{ border-color:#fff; border-bottom-color:#000; z-index:2; }
+  .tab:hover{ transform:translateY(-1px); box-shadow:0 10px 26px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04); }
+  .tab.active{
+    border-color:rgba(118,168,255,.65);
+    border-bottom-color:#0000;
+    background:linear-gradient(180deg, rgba(26,34,48,.95), rgba(16,22,34,.9));
+    box-shadow:0 14px 34px rgba(0,0,0,.55), 0 0 0 1px rgba(118,168,255,.28) inset;
+    z-index:2;
+  }
+  .tab .label{ overflow:hidden; text-overflow:ellipsis; color:var(--fg) }
 
-  /* Close button: bigger hit-area, always clickable */
   .tab .close{
     display:inline-flex; align-items:center; justify-content:center;
-    width:18px; height:18px; line-height:18px;
-    border:1px solid transparent; border-radius:3px;
-    cursor:pointer; user-select:none;
-    font-weight:700;
+    width:20px; height:20px; line-height:20px; border-radius:7px;
+    border:1px solid transparent; color:var(--fg-dim);
   }
-  .tab .close:hover{ border-color:#fff; }
-  .tab .close:active{ transform:translateY(1px); }
+  .tab .close:hover{ border-color:rgba(118,168,255,.45); color:#fff; background:rgba(118,168,255,.12) }
 
   .tab-add{
-    flex:0 0 auto; border:1px solid #fff; border-radius:50%;
-    width:26px; height:26px; line-height:24px; text-align:center;
-    background:#000; color:#fff; cursor:pointer; font-size:16px;
-    margin-bottom:-1px;
-  }
-  .tab-add:hover{ background:#111 }
-
-  /* Address row under tabs */
-  .omnibox{ flex:1 1 auto; display:flex; align-items:center; gap:8px; }
-  .btn{
-    border:1px solid #fff; background:#000; color:#fff; border-radius:6px;
-    height:30px; min-width:30px; padding:0 8px; cursor:pointer;
+    flex:0 0 auto;
+    width:28px; height:28px; border-radius:50%;
+    border:1px solid var(--stroke); color:var(--fg);
+    background:linear-gradient(180deg, rgba(22,28,40,.9), rgba(14,18,28,.8));
+    cursor:pointer; font-size:16px;
     display:inline-flex; align-items:center; justify-content:center;
+    margin-bottom:-1px; transition:background .12s ease, border-color .12s ease, transform .12s ease;
   }
-  .btn:hover{ background:#111 }
-  .btn.toggled{ background:#111; outline:2px solid #fff; }
+  .tab-add:hover{ border-color:rgba(118,168,255,.45); background:linear-gradient(180deg, rgba(30,38,54,.95), rgba(18,24,38,.9)); transform:translateY(-1px); }
+
+  /* ===== Address row (omnibox) ===== */
+  .omnibox{ flex:1 1 auto; display:flex; align-items:center; gap:10px; padding:6px 12px; }
+
+  .btn{
+    border:1px solid var(--stroke);
+    background:linear-gradient(180deg, rgba(24,30,44,.9), rgba(16,22,34,.85));
+    color:var(--fg); border-radius:10px; height:34px; min-width:34px; padding:0 10px;
+    cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 6px 18px rgba(0,0,0,.35);
+    transition:transform .12s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease;
+  }
+  .btn:hover{ border-color:rgba(118,168,255,.45); background:linear-gradient(180deg, rgba(30,38,54,.95), rgba(18,24,38,.9)); transform:translateY(-1px); box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 10px 26px rgba(0,0,0,.45); }
+  .btn.toggled{ outline:2px solid rgba(118,168,255,.55); outline-offset:0 }
+
   .reload{ font-weight:700 }
 
   .bar{
-    flex:1 1 auto; display:flex; align-items:center;
-    border:1px solid #fff; border-radius:16px; padding:6px 10px; margin:0;
+    flex:1 1 auto; display:flex; align-items:center; gap:8px;
+    border:1px solid var(--stroke);
+    background:linear-gradient(180deg, rgba(20,26,38,.85), rgba(12,18,30,.8));
+    border-radius:999px; padding:8px 14px; margin:0;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 6px 18px rgba(0,0,0,.35);
   }
+  .bar:focus-within{ outline:2px solid rgba(118,168,255,.55) }
+
   #sj-address{
-    all:unset; color:#fff; width:100%;
-    font:14px/1.3 "Courier New",ui-monospace,monospace;
+    all:unset; color:var(--fg); width:100%;
+    font:14px/1.3 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
   }
-  #sj-address::placeholder{ color:#bfbfbf }
-  .bar:focus-within{ outline:2px solid #fff; outline-offset:2px }
+  #sj-address::placeholder{ color:var(--fg-dim) }
 
-  /* Home (shown when active tab has no URL) */
-  .home{ padding:24px 18px; max-width:980px; margin:calc(var(--chrome-h) + 20px) auto 16vh; }
-  .home .title{ margin:0 0 8px; font-size:28px; font-weight:700 }
-  .home .subtitle{ margin:0 0 14px; color:#ddd; font-size:12px }
-  .links{ margin-top:12px; display:flex; gap:10px; align-items:center; font-size:12px }
-  .links a{ color:#fff; text-decoration:none; border-bottom:1px solid transparent }
-  .links a:hover{ border-bottom-color:#fff }
+  /* ===== Home card ===== */
+  .home{
+    max-width:980px; margin:calc(var(--chrome-h) + 28px) auto 18vh; padding:0 18px;
+  }
+  .hero{
+    padding:24px; border:1px solid var(--stroke); border-radius:var(--radius);
+    background:linear-gradient(180deg, rgba(20,26,38,.75), rgba(12,18,30,.65));
+    box-shadow:var(--shadow);
+  }
+  .title{ margin:0 0 10px; font-size:28px; font-weight:800; letter-spacing:.2px; }
+  .subtitle{ margin:0; color:var(--fg-dim); font-size:13px }
+  .links{ margin-top:14px; display:flex; gap:12px; align-items:center; font-size:12px; color:var(--fg-dim) }
+  .links a{ color:var(--fg); text-decoration:none; border-bottom:1px dashed transparent; padding-bottom:1px }
+  .links a:hover{ border-bottom-color:rgba(118,168,255,.55) }
 
-  /* Keep error hooks but hide visually */
+  /* hide error hooks visually */
   #sj-error,#sj-error-code{ display:none }
 
-  /* Single results surface sized below the fixed header */
+  /* ===== Result surface ===== */
   #sj-frame{
-    border:none; position:fixed; left:0; right:0;
-    top:var(--chrome-h); height:calc(100vh - var(--chrome-h));
-    width:100vw; background:#000; z-index:9999; display:none;
+    position:fixed; left:0; right:0; top:var(--chrome-h);
+    width:100vw; height:calc(100vh - var(--chrome-h));
+    border:none; background:#0a0f15; z-index:9999; display:none;
   }
 
-  /* Tiny toast */
+  /* Toast */
   .toast{
-    position:fixed; top:8px; right:8px; z-index:10001;
-    background:#000; color:#fff; border:1px solid #fff; border-radius:6px;
-    padding:8px 10px; font-size:12px;
+    position:fixed; top:10px; right:10px; z-index:10001;
+    padding:10px 12px; border-radius:10px; border:1px solid var(--stroke);
+    background:linear-gradient(180deg, rgba(22,28,40,.95), rgba(14,18,28,.85));
+    box-shadow:var(--shadow); color:var(--fg); font-size:12px;
   }
 
-  @media (max-width:720px){
-    :root{ --chrome-h:114px }
-    .tab{ max-width:160px }
+  @media (max-width:820px){
+    :root{ --chrome-h:124px }
+    .tab{ max-width:180px }
   }
 </style>
 
-<!-- Runtime/transport -->
+<!-- Runtime/transport (fix paths if not at root) -->
 <script src="/scram/scramjet.all.js"></script>
 <script src="/baremux/index.js" defer></script>
 <script src="/epoxy/index.js" defer></script>
@@ -121,8 +173,18 @@
 <script src="index.js" defer></script>
 
 <script>
+  /* Sensible default for WISP over HTTPS if not set */
   (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
 
+  /* Header height → push iframe under it */
+  function measureChrome(){
+    const c=document.querySelector('.chrome'); if(!c) return;
+    document.documentElement.style.setProperty('--chrome-h', Math.ceil(c.getBoundingClientRect().height)+'px');
+  }
+  addEventListener('resize',measureChrome);
+  addEventListener('DOMContentLoaded',measureChrome);
+
+  /* Input normalizer */
   function normalizeInput(q){
     q=(q||'').trim();
     if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) return 'https://www.google.com/search?q='+encodeURIComponent(q);
@@ -130,6 +192,7 @@
     return q.replace(/^http:\/\//i,'https://');
   }
 
+  /* Pretty titles */
   const BRAND_MAP = {
     'tiktok.com':'TikTok','youtube.com':'YouTube','youtu.be':'YouTube',
     'instagram.com':'Instagram','x.com':'X','twitter.com':'Twitter',
@@ -152,13 +215,13 @@
   }
 
   addEventListener('DOMContentLoaded',()=>{
-    const tabsWrap=document.getElementById('tabs');
-    const addBtn=document.getElementById('tab-add');
-    const form=document.getElementById('sj-form');
-    const addr=document.getElementById('sj-address');
-    const frame=document.getElementById('sj-frame');
-    const home=document.getElementById('home');
-    const reloadBtn=document.getElementById('reload');
+    const tabsWrap = document.getElementById('tabs');
+    const addBtn   = document.getElementById('tab-add');
+    const form     = document.getElementById('sj-form');
+    const addr     = document.getElementById('sj-address');
+    const frame    = document.getElementById('sj-frame');
+    const home     = document.getElementById('home');
+    const reloadBtn= document.getElementById('reload');
     const inspectBtn=document.getElementById('inspect');
 
     let tabs=[]; let active=-1; let nextId=1; let inspectorOn=false;
@@ -177,8 +240,7 @@
     function setActive(idx){
       if (idx===active || idx<0 || idx>=tabs.length) return;
       if (active>=0) tabs[active].el.classList.remove('active');
-      active=idx;
-      tabs[active].el.classList.add('active');
+      active=idx; tabs[active].el.classList.add('active');
 
       const url=tabs[active].url||'';
       addr.placeholder = url ? labelFrom(url) : 'URL or search…';
@@ -219,14 +281,13 @@
       updateHome();
     }
 
-    /* === Robust tab click handling (delegation) === */
+    /* Delegation for tabs/close */
     tabsWrap.addEventListener('click', (e) => {
       const closeEl = e.target.closest('.close');
       if (closeEl) {
         e.preventDefault(); e.stopPropagation();
         const tabEl = closeEl.closest('.tab');
-        if (!tabEl) return;
-        closeTabById(Number(tabEl.dataset.id));
+        if (tabEl) closeTabById(Number(tabEl.dataset.id));
         return;
       }
       const tabEl = e.target.closest('.tab');
@@ -239,7 +300,7 @@
 
     addBtn.addEventListener('click',()=>addTab());
 
-    // Reload: refresh proxied page or re-run navigation
+    /* Reload: reload proxied page or re-run navigation */
     reloadBtn.addEventListener('click',()=>{
       if (!tabs.length || active<0) return;
       const proxied = frame.getAttribute('src');
@@ -255,7 +316,7 @@
       }
     });
 
-    // ===== INSPECTOR (icon button) =====
+    /* ===== Mini Inspector (</> icon) ===== */
     function disableInspector(){
       try{
         const w = frame.contentWindow; const d = w.document;
@@ -276,38 +337,44 @@
 
       const overlay = d.createElement('div');
       overlay.id='__mini_inspector_overlay__';
-      overlay.style.cssText='position:fixed;pointer-events:none;border:1px solid #fff;outline:9999px solid rgba(0,0,0,0.4);z-index:2147483646;left:0;top:0;width:0;height:0;';
+      overlay.style.cssText='position:fixed;pointer-events:none;border:1px solid rgba(118,168,255,.9);outline:9999px solid rgba(0,0,0,.45);border-radius:8px;z-index:2147483646;left:0;top:0;width:0;height:0;box-shadow:0 0 0 1px rgba(118,168,255,.35) inset';
+
       const info = d.createElement('div');
-      info.style.cssText='position:fixed;pointer-events:none;z-index:2147483647;background:#000;color:#fff;border:1px solid #fff;border-radius:4px;padding:2px 6px;font:12px "Courier New",monospace;transform:translateY(-22px);';
+      info.style.cssText='position:fixed;pointer-events:none;z-index:2147483647;background:rgba(16,22,34,.95);color:#e9ecf1;border:1px solid rgba(118,168,255,.45);border-radius:8px;padding:4px 8px;font:12px "Courier New",monospace;transform:translateY(-26px);box-shadow:0 8px 20px rgba(0,0,0,.45)';
       overlay.appendChild(info);
 
       const panel = d.createElement('div');
       panel.id='__mini_inspector_panel__';
-      panel.style.cssText='position:fixed;right:8px;bottom:8px;z-index:2147483647;background:#000;color:#fff;border:1px solid #fff;border-radius:6px;padding:8px;max-width:48vw;min-width:280px;font:12px "Courier New",monospace;';
+      panel.style.cssText='position:fixed;right:12px;bottom:12px;z-index:2147483647;color:#e9ecf1;border:1px solid rgba(118,168,255,.4);border-radius:14px;padding:10px;max-width:48vw;min-width:300px;font:12px "Courier New",monospace;background:linear-gradient(180deg, rgba(22,28,40,.96), rgba(14,18,28,.92));box-shadow:0 16px 40px rgba(0,0,0,.55)';
       panel.innerHTML = `
-        <div style="margin-bottom:6px">Inspect Element — <button id="__mi_close__" style="background:#000;color:#fff;border:1px solid #fff;border-radius:4px;padding:2px 6px;cursor:pointer">Close</button></div>
-        <div style="margin-bottom:4px">Selected: <code id="__mi_sel__"></code></div>
+        <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <strong>Mini Inspector</strong>
+          <button id="__mi_close__" style="background:transparent;color:#e9ecf1;border:1px solid rgba(118,168,255,.45);border-radius:8px;padding:4px 8px;cursor:pointer">Close (Esc)</button>
+        </div>
+        <div style="margin-bottom:6px">Selected: <code id="__mi_sel__"></code></div>
         <label>textContent</label>
-        <textarea id="__mi_text__" style="width:100%;height:64px;background:#000;color:#fff;border:1px solid #fff;border-radius:4px;margin:4px 0 8px;resize:vertical;"></textarea>
+        <textarea id="__mi_text__" style="width:100%;height:70px;background:rgba(12,18,30,.9);color:#e9ecf1;border:1px solid rgba(118,168,255,.35);border-radius:10px;margin:4px 0 8px;resize:vertical;"></textarea>
         <label>outerHTML</label>
-        <textarea id="__mi_html__" style="width:100%;height:140px;background:#000;color:#fff;border:1px solid #fff;border-radius:4px;margin:4px 0 8px;resize:vertical;"></textarea>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button id="__mi_apply__"  style="background:#000;color:#fff;border:1px solid #fff;border-radius:4px;padding:4px 8px;cursor:pointer">Apply HTML</button>
-          <button id="__mi_textbtn__"style="background:#000;color:#fff;border:1px solid #fff;border-radius:4px;padding:4px 8px;cursor:pointer">Apply Text</button>
-          <button id="__mi_delete__" style="background:#000;color:#fff;border:1px solid #fff;border-radius:4px;padding:4px 8px;cursor:pointer">Delete Node</button>
+        <textarea id="__mi_html__" style="width:100%;height:150px;background:rgba(12,18,30,.9);color:#e9ecf1;border:1px solid rgba(118,168,255,.35);border-radius:10px;margin:4px 0 10px;resize:vertical;"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="__mi_apply__"  style="background:transparent;color:#e9ecf1;border:1px solid rgba(118,168,255,.45);border-radius:10px;padding:6px 10px;cursor:pointer">Apply HTML</button>
+          <button id="__mi_textbtn__"style="background:transparent;color:#e9ecf1;border:1px solid rgba(118,168,255,.45);border-radius:10px;padding:6px 10px;cursor:pointer">Apply Text</button>
+          <button id="__mi_delete__" style="background:transparent;color:#ff8f8f;border:1px solid rgba(255,143,143,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Delete Node</button>
         </div>
       `;
+
       d.body.appendChild(overlay); d.body.appendChild(panel);
 
       let current=null;
       function fmt(el){ if(!el) return ''; const tag=el.tagName.toLowerCase(); const id=el.id?`#${el.id}`:''; const cls=(el.className && typeof el.className==='string')?'.'+el.className.trim().split(/\s+/).join('.') : ''; return `${tag}${id}${cls}`; }
+
       w.__mini_inspector_move = function(ev){
         if (!ev.target || ev.target===overlay || ev.target===panel || panel.contains(ev.target)) return;
         const el=ev.target, r=el.getBoundingClientRect?.(); if(!r) return;
         overlay.style.left=r.left+'px'; overlay.style.top=r.top+'px'; overlay.style.width=r.width+'px'; overlay.style.height=r.height+'px';
         info.textContent = fmt(el) + `  ${Math.round(r.width)}×${Math.round(r.height)}`;
-        info.style.left = Math.max(4, Math.min(r.left, d.documentElement.clientWidth - 200)) + 'px';
-        info.style.top  = (r.top - 6) + 'px';
+        info.style.left = Math.max(6, Math.min(r.left, d.documentElement.clientWidth - 220)) + 'px';
+        info.style.top  = (r.top - 8) + 'px';
       };
       w.__mini_inspector_click = function(ev){
         if (panel.contains(ev.target)) return;
@@ -358,14 +425,13 @@
       inspectorOn=true; inspectBtn.classList.add('toggled');
     }
 
-    // Toggle inspector
     inspectBtn.addEventListener('click', ()=>{
       if (inspectorOn) { try { frame.contentWindow.postMessage({__mini_inspector_cmd:'off'}, '*'); } catch(_){}
         disableInspector();
       } else { enableInspector(); }
     });
 
-    // Normalize BEFORE your existing submit handler; remember URL per tab
+    /* Submit hook: normalize + remember tab URL + show frame */
     form.addEventListener('submit',()=>{
       const n = normalizeInput(addr.value);
       addr.value = n;
@@ -394,7 +460,7 @@
         <button id="tab-add" class="tab-add" title="New tab">+</button>
       </div>
     </div>
-    <!-- Row 2: Address (omnibox) under the tabs -->
+    <!-- Row 2: Omnibox -->
     <div class="row">
       <div class="omnibox">
         <button id="reload"  class="btn reload"  title="Reload">↻</button>
@@ -407,22 +473,24 @@
     </div>
   </div>
 
-  <!-- Home (visible when active tab has no URL) -->
+  <!-- Home -->
   <main class="home" id="home">
-    <h1 class="title">PROJECT TRINITY</h1>
-    <p class="subtitle">1.1.3</p>
-    <div class="links">
-      <a href="credits.html">Credits</a><span>·</span>
-      <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Github</a><span>·</span>
-      <a href="https://www.trinity.gt.tc" target="_blank" rel="noopener">TRINITY</a><span>·</span>
-      <span>PT © 2025</span>
+    <div class="hero">
+      <h1 class="title">PROJECT TRINITY</h1>
+      <p class="subtitle">1.1.4</p>
+      <div class="links">
+        <a href="credits.html">Credits</a><span>·</span>
+        <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Github</a><span>·</span>
+        <a href="https://www.trinity.gt.tc" target="_blank" rel="noopener">TRINITY</a><span>·</span>
+        <span>PT © 2025</span>
+      </div>
     </div>
   </main>
 
   <!-- Single iframe under the fixed header -->
   <iframe id="sj-frame"></iframe>
 
-  <!-- Hooks (kept, visually hidden) -->
+  <!-- Hooks (kept) -->
   <p id="sj-error"></p>
   <pre id="sj-error-code"></pre>
 </body>
