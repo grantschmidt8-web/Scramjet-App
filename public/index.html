@@ -121,44 +121,16 @@
   }
   #sj-address::placeholder{ color:var(--fg-dim) }
 
-  /* ===== Centered Home ===== */
-  .home{
-    position:fixed;
-    left:0; right:0;
-    top:var(--chrome-h);
-    bottom:0;
-    display:flex;
-    align-items:center;      /* vertical center */
-    justify-content:center;  /* horizontal center */
-    padding:18px;
-    pointer-events:none;     /* clicks pass through unless inside .hero */
-  }
+  /* ===== Home card (neutral) ===== */
+  .home{ max-width:980px; margin:calc(var(--chrome-h) + 28px) auto 18vh; padding:0 18px; }
   .hero{
-    pointer-events:auto;
-    width:min(720px, 92vw);
-    padding:28px;
-    border:1px solid var(--stroke);
-    border-radius:var(--radius);
+    padding:24px; border:1px solid var(--stroke); border-radius:var(--radius);
     background:linear-gradient(180deg, rgba(22,22,22,.78), rgba(14,14,14,.72));
     box-shadow:var(--shadow);
-    text-align:center;
   }
-
-  /* Brand photo replacing title */
-  .brand-photo{
-    display:block;
-    width:min(360px, 70vw);
-    max-width:100%;
-    height:auto;
-    margin:0 auto 12px;
-    border-radius:16px;
-    border:1px solid var(--stroke);
-    box-shadow:0 14px 34px rgba(0,0,0,.55);
-    object-fit:cover;
-  }
-  .title{ display:none; } /* hide text title now that we use a photo */
+  .title{ margin:0 0 10px; font-size:28px; font-weight:800; letter-spacing:.2px; }
   .subtitle{ margin:0; color:var(--fg-dim); font-size:13px }
-  .links{ margin-top:14px; display:flex; gap:12px; align-items:center; justify-content:center; font-size:12px; color:var(--fg-dim) }
+  .links{ margin-top:14px; display:flex; gap:12px; align-items:center; font-size:12px; color:var(--fg-dim) }
   .links a{ color:var(--fg); text-decoration:none; border-bottom:1px dashed transparent; padding-bottom:1px }
   .links a:hover{ border-bottom-color:rgba(255,255,255,.12) }
 
@@ -371,8 +343,8 @@
       panel.style.cssText='position:fixed;right:12px;bottom:12px;z-index:2147483647;color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:14px;padding:10px;max-width:48vw;min-width:300px;font:12px "Courier New",monospace;background:linear-gradient(180deg, rgba(24,24,24,.98), rgba(16,16,16,.94));box-shadow:0 16px 40px rgba(0,0,0,.65)';
       panel.innerHTML = `
         <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-          <strong>Mini Inspector</strong>
-          <button id="__mi_close__" style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:8px;padding:4px 8px;cursor:pointer">Close (Esc)</button>
+          <strong>Inspector</strong>
+          <button id="__mi_close__" style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:8px;padding:4px 8px;cursor:pointer">Close</button>
         </div>
         <div style="margin-bottom:6px">Selected: <code id="__mi_sel__"></code></div>
         <label>textContent</label>
@@ -497,15 +469,11 @@
     </div>
   </div>
 
-  <!-- Centered Home (photo replaces title) -->
+  <!-- Home -->
   <main class="home" id="home">
     <div class="hero">
-      <!-- Replace src with your DIRECT i.ibb.co image URL -->
-      <img class="brand-photo"
-           src="https://i.ibb.co/REPLACE/your-image-file.jpg"
-           alt="Brand" loading="lazy" referrerpolicy="no-referrer" />
       <h1 class="title">PROJECT TRINITY</h1>
-      <p class="subtitle">Dark neutral gradients. Rounded everything. Tabs + omnibox + mini inspector.</p>
+      <p class="subtitle">1.1.4</p>
       <div class="links">
         <a href="credits.html">Credits</a><span>·</span>
         <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Github</a><span>·</span>
