@@ -47,9 +47,14 @@
   .tab .fav{ width:16px; height:16px; border-radius:4px; object-fit:cover; flex:0 0 16px; background:#1a1a1a; border:1px solid #2a2a2a; }
   .tab .label{ overflow:hidden; text-overflow:ellipsis; color:var(--fg) }
   .tab .close{ display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:7px; color:var(--fg-dim); }
-  .tab-add{ flex:0 0 auto; width:28px; height:28px; border-radius:50%; border:1px solid var(--stroke);
-    color:var(--fg); background:linear-gradient(180deg, rgba(26,26,26,.95), rgba(18,18,18,.9)); cursor:pointer; font-size:16px;
-    display:inline-flex; align-items:center; justify-content:center; margin-bottom:-1px; }
+
+  .tab-add{
+    flex:0 0 auto; height:28px; border-radius:50%; border:1px solid var(--stroke);
+    color:var(--fg); background:linear-gradient(180deg, rgba(26,26,26,.95), rgba(18,18,18,.9));
+    cursor:pointer; font-size:0;
+    display:inline-flex; align-items:center; justify-content:center; margin-bottom:-1px; padding:0 0; width:28px;
+  }
+  .tab-add img{ width:16px; height:16px; border-radius:4px; display:block; }
 
   .omnibox{ flex:1 1 auto; display:flex; align-items:center; gap:10px; padding:6px 12px; min-width:0; }
   .btn{
@@ -121,7 +126,7 @@
   }
   .chip[data-active="1"]{ outline:2px solid rgba(255,255,255,.10) }
 
-  /* UPDATED: stronger bordered swatches (2px) + hover/active */
+  /* Swatches (bold border + hover/active) */
   .swatch{
     width:84px; height:40px; border-radius:10px; border:2px solid var(--stroke);
     cursor:pointer; position:relative;
@@ -172,12 +177,22 @@
   const LS_KEY_GRAD_DARK  = 'pt_gradient_dark';
   const LS_KEY_GRAD_LIGHT = 'pt_gradient_light';
 
+  /* THEME-AWARE default icons (data URIs) */
   const DARK_FAV = 'data:image/svg+xml;utf8,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
       '<rect width="24" height="24" rx="4" fill="#222222"/>' +
-      '<path d="M6 12h12M12 6v12" stroke="#6e6e6e" stroke-width="1.5" stroke-linecap="round"/>' +
+      '<path d="M6 12h12M12 6v12" stroke="#bdbdbd" stroke-width="1.7" stroke-linecap="round"/>' +
     '</svg>'
   );
+  const LIGHT_FAV = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
+      '<rect width="24" height="24" rx="4" fill="#f1f3f5" stroke="#d5d7db"/>' +
+      '<path d="M6 12h12M12 6v12" stroke="#2b2b2b" stroke-width="1.7" stroke-linecap="round"/>' +
+    '</svg>'
+  );
+  function currentDefaultFav(){
+    return (document.documentElement.dataset.theme === 'light') ? LIGHT_FAV : DARK_FAV;
+  }
 
   const THEMES = {
     dark: { fg:'#e6e6e6', dim:'#bdbdbd', bg:'#0a0a0a', stroke:'#262626', accent:'#8a8a8a',
@@ -267,6 +282,29 @@
     document.documentElement.style.setProperty('--grad-3', g.sw[2]);
   }
 
+  function applyThemeIcons(themeName){
+    const defFav = (themeName === 'light') ? LIGHT_FAV : DARK_FAV;
+
+    // header favicon (only if it's currently a default)
+    const headerFav = document.getElementById('site-favicon');
+    if (headerFav){
+      if (headerFav.src === '' || headerFav.src === DARK_FAV || headerFav.src === LIGHT_FAV) {
+        headerFav.src = defFav;
+      }
+    }
+
+    // tab "+" button icon
+    const addIcon = document.getElementById('tab-add-ico');
+    if (addIcon) addIcon.src = defFav;
+
+    // any tab favicons that are still default should switch
+    document.querySelectorAll('.tab .fav').forEach(img=>{
+      if (img.src === '' || img.src === DARK_FAV || img.src === LIGHT_FAV) {
+        img.src = defFav;
+      }
+    });
+  }
+
   function applyGradient(name){
     const theme = localStorage.getItem(LS_KEY_THEME) || 'dark';
     const g = GRADS[name]; if (!g || g.theme !== theme) return;
@@ -303,6 +341,7 @@
     repaintSettings(name);
     localStorage.setItem(LS_KEY_THEME, name);
     repaintTabsForTheme();
+    applyThemeIcons(name);           /* NEW: swap plus + default favs with theme */
   }
 
   function applyGradientToUIActiveState(){
@@ -368,21 +407,18 @@
     applyTheme(theme);
     setCollapsed(localStorage.getItem(LS_KEY_COLLAPSE) === '1');
 
-    const tabsWrap = document.getElementById('tabs');
-    const addBtn   = document.getElementById('tab-add');
-    const form     = document.getElementById('sj-form');
-    const addr     = document.getElementById('sj-address');
-    const frame    = document.getElementById('sj-frame');
-    const home     = document.getElementById('home');
-    const reloadBtn= document.getElementById('reload');
-    const inspectBtn=document.getElementById('inspect');
-    const headerFav = document.getElementById('site-favicon');
-    const settingsBtn = document.getElementById('settings');
-    const chromeToggle = document.getElementById('chrome-toggle');
-    const settingsPop = document.getElementById('settings-pop');
-    const chromeFab = document.getElementById('chrome-fab');
+    const tabsWrap   = document.getElementById('tabs');
+    const addBtn     = document.getElementById('tab-add');
+    const form       = document.getElementById('sj-form');
+    const addr       = document.getElementById('sj-address');
+    const frame      = document.getElementById('sj-frame');
+    const home       = document.getElementById('home');
+    const reloadBtn  = document.getElementById('reload');
+    const inspectBtn = document.getElementById('inspect');
+    const headerFav  = document.getElementById('site-favicon');
+    const settingsBtn= document.getElementById('settings');
 
-    if (headerFav) headerFav.src = DARK_FAV;
+    if (headerFav) headerFav.src = currentDefaultFav();
 
     let tabs=[]; let active=-1; let nextId=1; let inspectorOn=false;
     let userEditing=false;
@@ -408,7 +444,6 @@
       if (active>=0) tabs[active].el.querySelector('.label').textContent = prettyLabel(rawUrl);
     }
     function clearAddressBar(){ addr.value=''; addr.placeholder='URL or search…'; delete addr.dataset.raw; }
-    function focusAddr(){ setTimeout(()=>{ addr.focus(); try{ const L=addr.value.length; addr.setSelectionRange(L,L);}catch{} },0); }
 
     function updateHome(){
       const show = (!tabs.length || !tabs[active]?.url);
@@ -428,7 +463,7 @@
         if (form.requestSubmit) form.requestSubmit();
         else form.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
       } else {
-        clearAddressBar(); frame.removeAttribute('src'); frame.style.display='none'; home.style.display='block'; focusAddr();
+        clearAddressBar(); frame.removeAttribute('src'); frame.style.display='none'; home.style.display='block';
       }
       updateHome();
     }
@@ -437,7 +472,7 @@
       const id=nextId++;
       const el=document.createElement('div');
       el.className='tab'; el.dataset.id=id;
-      el.innerHTML=`<img class="fav" alt="" src="${DARK_FAV}" referrerpolicy="no-referrer" crossorigin="anonymous"/>
+      el.innerHTML=`<img class="fav" alt="" src="${currentDefaultFav()}" referrerpolicy="no-referrer" crossorigin="anonymous"/>
                     <span class="label">New Tab</span>
                     <span class="close" title="Close" aria-label="Close">×</span>`;
       tabsWrap.insertBefore(el, addBtn);
@@ -447,6 +482,7 @@
       setActive(tabs.length-1);
       measureChrome();
     }
+
     function closeTabById(id){
       const idx=tabs.findIndex(t=>t.id===id); if (idx===-1) return;
       const wasActive=(idx===active); tabs[idx].el.remove(); tabs.splice(idx,1);
@@ -454,13 +490,18 @@
       if (wasActive) setActive(Math.max(0,idx-1)); else if (idx<active) active-=1;
       updateHome();
     }
+
     tabsWrap.addEventListener('click', (e) => {
       const closeEl = e.target.closest('.close');
       if (closeEl) { e.preventDefault(); e.stopPropagation(); const tabEl = closeEl.closest('.tab'); if (tabEl) closeTabById(Number(tabEl.dataset.id)); return; }
       const tabEl = e.target.closest('.tab'); if (tabEl) { e.preventDefault(); const idx = tabs.findIndex(t=>t.id===Number(tabEl.dataset.id)); setActive(idx); }
     });
 
-    addBtn.addEventListener('click',()=>{ setCollapsed(false); addTab(); focusAddr(); });
+    document.getElementById('tab-add').addEventListener('click',()=>{ 
+      document.documentElement.dataset.collapsed='0'; localStorage.setItem(LS_KEY_COLLAPSE,'0');
+      addTab(); 
+    });
+
     reloadBtn.addEventListener('click',()=>{
       if (!tabs.length || active<0) return;
       const proxied = frame.getAttribute('src');
@@ -472,13 +513,11 @@
       }
     });
 
-    inspectBtn.addEventListener('click', ()=>{ /* optional inspector kept as stub */ });
-
+    /* form submit */
     form.addEventListener('submit',()=>{
       const n = normalizeInput(addr.value);
       if (active>=0) { tabs[active].url = n; addr.dataset.raw = n; }
       setAddressBar(n, {force:true});
-      userEditing=false;
       frame.style.display='block'; home.style.display='none';
       setTimeout(updateTabMetaFromFrame, 700);
     }, true);
@@ -490,7 +529,12 @@
       if (tabImg){ tabImg.referrerPolicy='no-referrer'; tabImg.crossOrigin='anonymous'; }
       let i=0;
       function next(){
-        if(!candidates || i>=candidates.length){ if(headerFav) headerFav.src=DARK_FAV; if(tabImg) tabImg.src=DARK_FAV; return; }
+        if(!candidates || i>=candidates.length){
+          const def = currentDefaultFav();
+          if(headerFav) headerFav.src=def;
+          if(tabImg) tabImg.src=def;
+          return;
+        }
         const src = prox(candidates[i++]);
         if(headerFav){
           headerFav.onerror = next;
@@ -544,6 +588,7 @@
     frame.addEventListener('load', ()=>setTimeout(updateTabMetaFromFrame, 150));
     setInterval(updateTabMetaFromFrame, 900);
 
+    /* Settings popover (unchanged) */
     function openSettingsAtButton(btn){
       const curTheme = document.documentElement.dataset.theme || 'dark';
       const curGrad  = (curTheme==='light'
@@ -553,13 +598,12 @@
       document.querySelectorAll('.chip[data-group="theme"]').forEach(el=>{
         el.dataset.active = (el.dataset.value===curTheme?'1':'0');
       });
-
       document.querySelectorAll('.swatch').forEach(el=>{
         el.dataset.active = (el.dataset.value===curGrad?'1':'0');
       });
 
       const r = btn.getBoundingClientRect();
-      const pop = settingsPop;
+      const pop = document.getElementById('settings-pop');
       const margin = 8;
       pop.style.display = 'block';
       const popW = pop.offsetWidth || 360;
@@ -583,16 +627,19 @@
 
     document.getElementById('settings').addEventListener('click', ()=> {
       openSettingsAtButton(document.getElementById('settings'));
-      applyGradientToUIActiveState();
+      const theme = document.documentElement.dataset.theme || 'dark';
+      const cur   = (theme==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(theme);
+      document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el.dataset.value===cur?'1':'0'); });
     });
 
     document.querySelectorAll('.chip[data-group="theme"]').forEach(ch=>{
       ch.addEventListener('click', ()=>{
         const val = ch.dataset.value;
         applyTheme(val);
-        repaintSettings(val);
-        applyGradientToUIActiveState();
         document.querySelectorAll('.chip[data-group="theme"]').forEach(el=>{ el.dataset.active = (el===ch?'1':'0'); });
+        const theme = document.documentElement.dataset.theme || 'dark';
+        const cur   = (theme==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(theme);
+        document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el.dataset.value===cur?'1':'0'); });
       });
     });
 
@@ -600,22 +647,24 @@
       sw.addEventListener('click', ()=>{
         const theme = document.documentElement.dataset.theme || 'dark';
         const val = sw.dataset.value;
-        if (!gradientBelongsToTheme(val, theme)) return;
+        if (!GRADS[val] || GRADS[val].theme !== theme) return;
         setGradientVars(val);
         localStorage.setItem(theme==='light' ? LS_KEY_GRAD_LIGHT : LS_KEY_GRAD_DARK, val);
         document.body.style.background = buildBodyBackground(theme);
-        applyGradientToUIActiveState();
+        document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el===sw?'1':'0'); });
       });
     });
 
-    document.getElementById('chrome-toggle').addEventListener('click', ()=>{
-      const now = !(document.documentElement.dataset.collapsed === '1');
-      setCollapsed(now);
-    });
-    document.getElementById('chrome-fab')?.addEventListener('click', ()=>{
-      const now = !(document.documentElement.dataset.collapsed === '1');
-      setCollapsed(now);
-    });
+    /* Initial UI */
+    // replace tab-add text with theme icon
+    const addBtnImg = document.createElement('img');
+    addBtnImg.id = 'tab-add-ico';
+    addBtnImg.alt = '+';
+    addBtnImg.referrerPolicy = 'no-referrer';
+    addBtnImg.crossOrigin = 'anonymous';
+    addBtnImg.src = currentDefaultFav();
+    document.getElementById('tab-add').textContent = '';
+    document.getElementById('tab-add').appendChild(addBtnImg);
 
     addTab(); updateHome(); measureChrome();
   });
