@@ -191,7 +191,6 @@
   .swatch[data-active="1"]::after{
     content:"✓"; position:absolute; right:8px; bottom:6px; font-size:14px; color:currentColor; opacity:.9;
   }
-
   .settings-pop, .settings-pop * { color: inherit; }
   :root[data-theme="dark"]  .swatch[data-theme="light"]{ display:none; }
   :root[data-theme="light"] .swatch[data-theme="dark"] { display:none; }
@@ -209,7 +208,6 @@
 <script src="/epoxy/index.js" defer></script>
 <script src="https://unpkg.com/wisp-js/dist/wisp.min.js" defer></script>
 <script src="register-sw.js" defer></script>
-<!-- search.js can stay, but navigation is driven here -->
 <script src="search.js" defer></script>
 <script src="index.js" defer></script>
 
@@ -234,6 +232,20 @@
     '</svg>'
   );
   function currentDefaultFav(){ return (document.documentElement.dataset.theme === 'light') ? LIGHT_FAV : DARK_FAV; }
+
+  // ===== NEW: proxy helpers (for icons & google suggest) =====
+  function proxAsset(u){
+    try { return location.origin + '/scramjet/' + encodeURIComponent(u); }
+    catch { return u; }
+  }
+  function originFavicon(u){
+    try{
+      const o = new URL(u).origin;
+      return proxAsset(o + '/favicon.ico');
+    }catch{
+      return currentDefaultFav();
+    }
+  }
 
   const THEMES = {
     dark: { fg:'#e6e6e6', dim:'#bdbdbd', bg:'#0a0a0a', stroke:'#262626', accent:'#8a8a8a',
@@ -520,32 +532,42 @@
       else if (tabs[active].url) { go(tabs[active].url); }
     });
 
-    /* Favicons + title from iframe */
+    /* ===== Favicons + title from iframe (PROXIED) ===== */
     function applyFavicon(candidates){
       const headerFav = document.getElementById('site-favicon');
-      const tabImg = tabs[active]?.el.querySelector('.fav');
+      const tabImg    = tabs[active]?.el.querySelector('.fav');
+      const def = (document.documentElement.dataset.theme==='light') ? LIGHT_FAV : DARK_FAV;
+
       if (headerFav){ headerFav.referrerPolicy='no-referrer'; headerFav.crossOrigin='anonymous'; }
-      if (tabImg){ tabImg.referrerPolicy='no-referrer'; tabImg.crossOrigin='anonymous'; }
-      let i=0;
+      if (tabImg){    tabImg.referrerPolicy='no-referrer';    tabImg.crossOrigin='anonymous'; }
+
+      let i = 0;
       function next(){
-        if(!candidates || i>=candidates.length){
-          const def = (document.documentElement.dataset.theme==='light') ? LIGHT_FAV : DARK_FAV;
-          if(headerFav) headerFav.src=def;
-          if(tabImg) tabImg.src=def;
+        if (!candidates || i >= candidates.length){
+          if (headerFav) headerFav.src = def;
+          if (tabImg)    tabImg.src    = def;
           return;
         }
-        const src = prox(candidates[i++]);
-        if(headerFav){
+        const raw = candidates[i++];
+        let absolute = raw;
+        try {
+          const base = frame.contentDocument?.baseURI || frame.contentWindow?.location?.href || tabs[active]?.url || '';
+          absolute = new URL(raw, base).href;
+        } catch {}
+        const proxed = proxAsset(absolute);
+
+        if (headerFav){
           headerFav.onerror = next;
-          headerFav.onload  = ()=>{ if(tabImg) tabImg.src = headerFav.src; };
-          headerFav.src = src;
-        }else if(tabImg){
+          headerFav.onload  = ()=>{ if (tabImg) tabImg.src = headerFav.src; };
+          headerFav.src = proxed;
+        } else if (tabImg){
           tabImg.onerror = next;
-          tabImg.src = src;
+          tabImg.src = proxed;
         }
       }
       next();
     }
+
     function updateTabMetaFromFrame(){
       if (active<0) return;
       let rawTarget = null; try { rawTarget = frame.contentWindow.location.href; } catch {}
@@ -596,13 +618,13 @@
         d.removeEventListener('keydown', w.__mini_inspector_key, true);
         w.__mini_inspector_move = w.__mini_inspector_click = w.__mini_inspector_key = null;
       }catch(_){}
-      inspectorOn=false; inspectBtn.classList.remove('toggled');
+      inspectorOn=false; document.getElementById('inspect')?.classList.remove('toggled');
     }
     function enableInspector(){
       try { void frame.contentDocument; }
       catch { disableInspector(); return; }
       const w = frame.contentWindow, d = w.document;
-      if (d.getElementById('__mini_inspector_overlay__')) { inspectorOn=true; inspectBtn.classList.add('toggled'); return; }
+      if (d.getElementById('__mini_inspector_overlay__')) { inspectorOn=true; document.getElementById('inspect')?.classList.add('toggled'); return; }
       const overlay = d.createElement('div');
       overlay.id='__mini_inspector_overlay__';
       overlay.style.cssText='position:fixed;pointer-events:none;border:1px solid rgba(180,180,180,.9);outline:9999px solid rgba(0,0,0,.50);border-radius:8px;z-index:2147483646;left:0;top:0;width:0;height:0;box-shadow:0 0 0 1px rgba(255,255,255,.04) inset';
@@ -658,7 +680,7 @@
       panel.querySelector('#__mi_textbtn__').onclick = ()=>{ if (!current) return; current.textContent = d.getElementById('__mi_text__').value; d.getElementById('__mi_html__').value = current.outerHTML; };
       panel.querySelector('#__mi_delete__').onclick = ()=>{ if (!current) return; const nxt = current.parentElement || d.body; current.remove(); current = nxt; d.getElementById('__mi_sel__').textContent = fmt(current); try { d.getElementById('__mi_html__').value = current.outerHTML || ''; } catch { d.getElementById('__mi_html__').value=''; } d.getElementById('__mi_text__').value = current.textContent || ''; };
       w.addEventListener('message', (e)=>{ if (e.data && e.data.__mini_inspector_cmd==='off') { d.removeEventListener('mousemove', w.__mini_inspector_move, true); d.removeEventListener('click',     w.__mini_inspector_click, true); d.removeEventListener('keydown',   w.__mini_inspector_key, true); overlay.remove(); panel.remove(); }});
-      inspectorOn=true; inspectBtn.classList.add('toggled');
+      inspectorOn=true; document.getElementById('inspect')?.classList.add('toggled');
     }
     inspectBtn.addEventListener('click', ()=>{ if (inspectorOn) { try { frame.contentWindow.postMessage({__mini_inspector_cmd:'off'}, '*'); } catch(_){ } disableInspector(); } else { enableInspector(); } });
 
@@ -711,22 +733,20 @@
     /* Init */
     addTab(); updateHome(); measureChrome();
 
-    /* ---------- Omnibox suggestions (merged) ---------- */
+    /* ---------- Omnibox suggestions (local + Google via Scramjet) ---------- */
     const suggEl = document.getElementById('omnibox-suggestions');
     const LS_HISTORY = 'pt_history_urls';
     const DEF_FAV = () => (document.documentElement.dataset.theme==='light' ? LIGHT_FAV : DARK_FAV);
 
     const COMMON = [
-      {label:'YouTube', url:'https://www.youtube.com', icon:'https://www.youtube.com/s/desktop/386c7b5e/img/favicon_32x32.png'},
-      {label:'YouTube Studio', url:'https://studio.youtube.com'},
-      {label:'YouTube Shorts', url:'https://www.youtube.com/shorts'},
-      {label:'TikTok', url:'https://www.tiktok.com'},
+      {label:'YouTube',   url:'https://www.youtube.com'},
+      {label:'TikTok',    url:'https://www.tiktok.com'},
       {label:'Instagram', url:'https://www.instagram.com'},
-      {label:'Reddit', url:'https://www.reddit.com'},
+      {label:'Reddit',    url:'https://www.reddit.com'},
       {label:'Wikipedia', url:'https://www.wikipedia.org'},
-      {label:'GitHub', url:'https://github.com'},
-      {label:'Google', url:'https://www.google.com'},
-      {label:'OpenAI', url:'https://openai.com'}
+      {label:'GitHub',    url:'https://github.com'},
+      {label:'Google',    url:'https://www.google.com'},
+      {label:'OpenAI',    url:'https://openai.com'}
     ];
 
     function loadHistory(){
@@ -755,26 +775,44 @@
       return e;
     }
 
-    function originFavicon(u){
-      try{ const o=new URL(u).origin; return o+'/favicon.ico'; }catch{ return DEF_FAV(); }
+    // Google suggestions via Scramjet proxy
+    let lastRemoteQ='', lastRemoteOut=[];
+    async function fetchGoogle(q){
+      const trimmed = (q||'').trim();
+      if (!trimmed){ lastRemoteOut=[]; return []; }
+      if (trimmed === lastRemoteQ) return lastRemoteOut;
+      lastRemoteQ = trimmed;
+      const url = 'https://suggestqueries.google.com/complete/search?client=firefox&q=' + encodeURIComponent(trimmed);
+      try{
+        const r = await fetch(proxAsset(url), { credentials:'omit' });
+        const data = await r.json(); // ["q", ["s1","s2"...]]
+        const arr = Array.isArray(data) && Array.isArray(data[1]) ? data[1] : [];
+        lastRemoteOut = arr.slice(0,8).map(s => ({
+          type:'google', label:s, sub:'Google suggestion',
+          value: (currentEngine()).replace('%s', encodeURIComponent(s)),
+          icon: DEF_FAV()
+        }));
+        return lastRemoteOut;
+      }catch{
+        lastRemoteOut = [];
+        return [];
+      }
     }
-    function hostFromUrl(u){ try{ return new URL(u).hostname.replace(/^www\./,''); }catch{ return u; } }
-    function urlHost(u){ return hostFromUrl(u); }
-    function trimUrl(u){ return u.replace(/^https?:\/\//,''); }
 
-    function makeItems(qRaw){
+    function hostFromUrl(u){ try{ return new URL(u).hostname.replace(/^www\./,''); }catch{ return u; } }
+    function localItems(qRaw){
       const q = (qRaw||'').trim();
       const items = [];
       if (!q){
-        const hist = loadHistory().slice(0,6).map(u=>({type:'history', label:u, sub:urlHost(u), value:u, icon:originFavicon(u)}));
-        const pop  = COMMON.slice(0,6).map(p=>({type:'common', label:p.label, sub:hostFromUrl(p.url), value:p.url, icon:p.icon||originFavicon(p.url)}));
+        const hist = loadHistory().slice(0,6).map(u=>({type:'history', label:u, sub:hostFromUrl(u), value:u, icon:originFavicon(u)}));
+        const pop  = COMMON.slice(0,6).map(p=>({type:'common', label:p.label, sub:hostFromUrl(p.url), value:p.url, icon:originFavicon(p.url)}));
         return [...hist, ...pop];
       }
       const looksDomainish = /^[a-z0-9.-]+$/i.test(q) && q.includes('.');
 
       COMMON.forEach(p=>{
         if (p.label.toLowerCase().startsWith(q.toLowerCase()) || p.url.toLowerCase().includes(q.toLowerCase())){
-          items.push({type:'brand', label:p.label, sub:p.url, value:p.url, icon:p.icon||originFavicon(p.url)});
+          items.push({type:'brand', label:p.label, sub:p.url, value:p.url, icon:originFavicon(p.url)});
         }
       });
 
@@ -792,58 +830,52 @@
       items.push({type:'search', label:q, sub:'Search', value:engine.replace('%s', encodeURIComponent(q)), icon:DEF_FAV()});
 
       loadHistory().forEach(u=>{
-        if (u.toLowerCase().includes(q.toLowerCase())) items.push({type:'history', label:trimUrl(u), sub:urlHost(u), value:u, icon:originFavicon(u)});
+        if (u.toLowerCase().includes(q.toLowerCase()))
+          items.push({type:'history', label:u.replace(/^https?:\/\//,''), sub:hostFromUrl(u), value:u, icon:originFavicon(u)});
       });
 
-      const seen = new Set(); const out=[];
-      for (const it of items){
-        if (seen.has(it.value)) continue;
-        seen.add(it.value); out.push(it);
-        if (out.length>=12) break;
+      return items;
+    }
+
+    async function buildItems(q){
+      const local = localItems(q);
+      const google = await fetchGoogle(q);
+      const seen = new Set();
+      const out = [];
+      for (const it of [...local, ...google]){
+        const key = it.value;
+        if (seen.has(key)) continue;
+        seen.add(key); out.push(it);
+        if (out.length >= 14) break;
       }
       return out;
     }
 
-    let activeIndex = -1;
-    let currentItems = [];
-
+    let activeIndex = -1, currentItems = [];
     function render(list){
-      currentItems = list;
+      currentItems = list; activeIndex = -1;
       suggEl.innerHTML = '';
-      activeIndex = -1;
       if (!list.length){ suggEl.style.display='none'; return; }
       for (let i=0;i<list.length;i++){
         const it = list[i];
         const li = document.createElement('li');
-        li.setAttribute('role','option');
-        li.dataset.index = String(i);
+        li.setAttribute('role','option'); li.dataset.index = String(i);
 
         const img = document.createElement('img');
-        img.className='fav';
-        img.alt='';
-        img.referrerPolicy='no-referrer';
-        img.crossOrigin='anonymous';
+        img.className='fav'; img.alt=''; img.referrerPolicy='no-referrer'; img.crossOrigin='anonymous';
         img.src = it.icon || DEF_FAV();
 
-        const main = document.createElement('span');
-        main.textContent = it.label;
+        const main = document.createElement('span');  main.textContent = it.label;
+        const sub  = document.createElement('small'); sub.textContent  = it.sub || '';
 
-        const sub = document.createElement('small');
-        sub.textContent = it.sub || '';
-
-        li.appendChild(img);
-        li.appendChild(main);
-        li.appendChild(sub);
-
+        li.appendChild(img); li.appendChild(main); li.appendChild(sub);
         li.addEventListener('mouseenter', ()=>select(i));
         li.addEventListener('mousedown', (e)=>{ e.preventDefault(); });
         li.addEventListener('click', ()=>apply(i));
-
         suggEl.appendChild(li);
       }
       suggEl.style.display='block';
     }
-
     function select(i){
       const items = [...suggEl.querySelectorAll('li')];
       items.forEach(n=>n.setAttribute('aria-selected','false'));
@@ -854,7 +886,6 @@
         addr.setSelectionRange(addr.value.length, addr.value.length);
       }
     }
-
     function apply(i){
       if (i<0 || i>=currentItems.length) return;
       const val = currentItems[i].value;
@@ -863,8 +894,22 @@
       form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}));
     }
 
-    addr.addEventListener('input', ()=>{ render(makeItems(addr.value||'')); });
-    addr.addEventListener('focus', ()=>{ render(makeItems(addr.value||'')); });
+    // Debounced input
+    let debounce=null, lastQ='';
+    async function refresh(q){
+      lastQ = q;
+      const localNow = localItems(q);
+      render(localNow);
+      if (debounce) clearTimeout(debounce);
+      debounce = setTimeout(async()=>{
+        if (q !== lastQ) return;
+        const merged = await buildItems(q);
+        if (q === lastQ) render(merged);
+      }, 120);
+    }
+
+    addr.addEventListener('input', ()=>{ refresh(addr.value||''); });
+    addr.addEventListener('focus', ()=>{ refresh(addr.value||''); });
 
     addr.addEventListener('keydown', (e)=>{
       const items = [...suggEl.querySelectorAll('li')];
@@ -894,7 +939,6 @@
         <button id="settings" class="btn icon" title="Settings">⚙️</button>
         <button id="chrome-toggle" class="btn icon" title="Collapse" aria-label="Collapse">–</button>
         <img id="site-favicon" alt="" src="" referrerpolicy="no-referrer" crossorigin="anonymous" />
-        <!-- SEARCH FORM WRAPPED FOR SUGGESTIONS -->
         <div class="sugg-wrap">
           <form id="sj-form" class="bar" autocomplete="off" role="search">
             <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
