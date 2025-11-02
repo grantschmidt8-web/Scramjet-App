@@ -18,27 +18,44 @@
     background:#000; border-bottom:1px solid #fff;
   }
   .row{ display:flex; align-items:center; gap:8px; padding:6px 8px; }
-  .row.tabs{ border-bottom:1px solid #fff; }
+  .row.tabs{
+    border-bottom:1px solid #fff;
+    align-items:flex-end;           /* let tabs sit on the baseline */
+    padding-bottom:0;               /* tighter baseline so corners show */
+  }
   .tabs-wrap{
-    flex:1 1 auto; display:flex; align-items:center; gap:6px;
+    flex:1 1 auto; display:flex; align-items:flex-end; gap:6px;
     overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none;
   }
   .tabs-wrap::-webkit-scrollbar{ display:none }
 
+  /* ==== TAB FIX ==== */
   .tab{
+    position:relative;
     display:flex; align-items:center; gap:6px;
-    padding:4px 10px; border:1px solid #444; border-bottom-color:#fff;
-    border-radius:10px 10px 0 0; background:#000; cursor:pointer;
-    white-space:nowrap; max-width:220px; user-select:none; transform:translateY(1px);
+    padding:4px 10px;
+    border:1px solid #444;          /* default border */
+    border-bottom-color:transparent; /* let it visually merge into the divider */
+    border-radius:10px 10px 0 0;
+    background:#000;
+    cursor:pointer; white-space:nowrap; max-width:220px; user-select:none;
+    margin-bottom:-1px;             /* overlap the row’s bottom border (prevents cutoff) */
+    z-index:1;                      /* sit above the row divider */
   }
   .tab span.label{ overflow:hidden; text-overflow:ellipsis }
-  .tab.active{ border-color:#fff; border-bottom-color:#000; }
+  .tab.active{
+    border-color:#fff;
+    border-bottom-color:#000;       /* crisp join with the row divider */
+    background:#000;
+    z-index:2;                      /* active tab above others */
+  }
   .tab .close{ cursor:pointer; opacity:.9 }
 
   .tab-add{
     flex:0 0 auto; border:1px solid #fff; border-radius:50%;
     width:26px; height:26px; line-height:24px; text-align:center;
     background:#000; color:#fff; cursor:pointer; font-size:16px;
+    margin-bottom:-1px;             /* align plus button with tab baseline */
   }
   .tab-add:hover{ background:#111 }
 
@@ -100,10 +117,8 @@
 <script src="index.js" defer></script>
 
 <script>
-  /* Default WISP_URL if you didn't set it and you're on HTTPS */
   (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
 
-  /* Measure header height → push iframe under it */
   function measureChrome(){
     const c=document.querySelector('.chrome'); if(!c) return;
     document.documentElement.style.setProperty('--chrome-h', Math.ceil(c.getBoundingClientRect().height)+'px');
@@ -111,7 +126,6 @@
   addEventListener('resize',measureChrome);
   addEventListener('DOMContentLoaded',measureChrome);
 
-  /* Normalize input to https or search BEFORE your handler runs */
   function normalizeInput(q){
     q=(q||'').trim();
     if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) return 'https://www.google.com/search?q='+encodeURIComponent(q);
@@ -119,7 +133,6 @@
     return q.replace(/^http:\/\//i,'https://');
   }
 
-  /* Pretty tab titles: brand map + TitleCase fallback */
   const BRAND_MAP = {
     'tiktok.com':'TikTok','youtube.com':'YouTube','youtu.be':'YouTube',
     'instagram.com':'Instagram','x.com':'X','twitter.com':'Twitter',
@@ -142,7 +155,6 @@
     }
   }
 
-  /* Tabs + single iframe flow (always navigate via your normal submit so the proxied URL is used) */
   addEventListener('DOMContentLoaded',()=>{
     const tabsWrap = document.getElementById('tabs');
     const addBtn   = document.getElementById('tab-add');
@@ -152,9 +164,7 @@
     const home     = document.getElementById('home');
     const reloadBtn= document.getElementById('reload');
 
-    let tabs=[];          // { id, el, url }
-    let active=-1;
-    let nextId=1;
+    let tabs=[]; let active=-1; let nextId=1;
 
     function updateHome(){
       const show = (!tabs.length || !tabs[active]?.url);
@@ -172,7 +182,6 @@
       addr.placeholder = url ? labelFrom(url) : 'URL or search…';
 
       if (url) {
-        // Re-run normal navigation so service worker builds /scramjet/... into #sj-frame
         addr.value = url;
         if (form.requestSubmit) form.requestSubmit();
         else form.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
@@ -216,7 +225,7 @@
 
     addBtn.addEventListener('click',()=>addTab());
 
-    // Reload: refresh proxied page (same-origin) or re-run navigation if blank
+    // Reload: refresh proxied page or re-run navigation
     reloadBtn.addEventListener('click',()=>{
       if (!tabs.length || active<0) return;
       const proxied = frame.getAttribute('src');
@@ -235,7 +244,7 @@
     // Normalize BEFORE your existing submit handler; remember URL per tab
     form.addEventListener('submit',()=>{
       const n = normalizeInput(addr.value);
-      addr.value = n; // search.js reads this
+      addr.value = n;
       if (active>=0) {
         tabs[active].url = n;
         tabs[active].el.querySelector('.label').textContent = labelFrom(n);
