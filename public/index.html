@@ -133,6 +133,12 @@
 
     let tabs=[]; let active=-1; let nextId=1; let inspectorOn=false;
 
+    /* === NEW: user editing lock === */
+    let userEditing = false;
+    addr.addEventListener('focus', ()=>{ userEditing = true; });
+    addr.addEventListener('input', ()=>{ userEditing = true; });
+    addr.addEventListener('blur',  ()=>{ userEditing = false; });
+
     function toast(msg){
       const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
       document.body.appendChild(t); setTimeout(()=>t.remove(), 2200);
@@ -150,7 +156,6 @@
       return q.replace(/^http:\/\//i,'https://');
     }
 
-    /* Extract real target URL from Scramjet path */
     function extractTargetFromScramjet(proxiedHref){
       try{
         const u = new URL(proxiedHref, location.origin);
@@ -167,7 +172,8 @@
       }catch(_){ return null; }
     }
 
-    function setAddressBar(rawUrl){
+    function setAddressBar(rawUrl, opts={force:false}){
+      if (!opts.force && userEditing) return;     // <- do not clobber while typing
       addr.value = rawUrl;
       if (active>=0) tabs[active].el.querySelector('.label').textContent = prettyLabel(rawUrl);
     }
@@ -201,14 +207,18 @@
 
       if (url) {
         addr.dataset.raw = url;
-        setAddressBar(url);
+        setAddressBar(url, {force:true});   // allow programmatic set
         if (form.requestSubmit) form.requestSubmit();
         else form.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
       } else {
+        // brand new tab
         clearAddressBar();
         frame.removeAttribute('src');
         frame.style.display='none';
         home.style.display='block';
+        // reset any leftover sync state for URL
+        lastMeta.url = null;
+        userEditing = true;                 // typing lock while we focus
         focusAddr();
       }
       updateHome();
@@ -226,7 +236,7 @@
       const tab={ id, el, url: (initialUrl || '') };
       if (tab.url) el.querySelector('.label').textContent = prettyLabel(tab.url);
       tabs.push(tab);
-      setActive(tabs.length-1);   // will clear+focus if empty
+      setActive(tabs.length-1);
       measureChrome();
     }
 
@@ -259,7 +269,7 @@
     });
 
     addBtn.addEventListener('click',()=>{
-      setCollapsed(false);   // ensure omnibox visible
+      setCollapsed(false);
       addTab();
       focusAddr();
     });
@@ -274,7 +284,7 @@
         const raw = tabs[active].url || '';
         if (!raw) return;
         addr.dataset.raw = raw;
-        setAddressBar(raw);
+        setAddressBar(raw, {force:true});
         if (form.requestSubmit) form.requestSubmit();
         else form.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
       }
@@ -341,7 +351,10 @@
       if (!rawTarget) rawTarget = frame.getAttribute('src') || '';
       const target = extractTargetFromScramjet(rawTarget) || addr.dataset.raw || '';
 
-      if (target) { tabs[active].url = target; setAddressBar(target); }
+      if (target) {
+        tabs[active].url = target;
+        setAddressBar(target);                // respects userEditing lock
+      }
 
       let didDoc=false;
       try {
@@ -365,7 +378,7 @@
     }
     /* ------------------------------------------------------- */
 
-    /* Mini Inspector */
+    /* Mini Inspector (unchanged) */
     function disableInspector(){
       try{
         const w = frame.contentWindow; const d = w.document;
@@ -380,7 +393,7 @@
     }
     function enableInspector(){
       try { void frame.contentDocument; }
-      catch { toast("Can't inspect this page (cross-origin)."); disableInspector(); return; }
+      catch { /* cross-origin */ disableInspector(); return; }
       const w = frame.contentWindow, d = w.document;
       if (d.getElementById('__mini_inspector_overlay__')) { inspectorOn=true; inspectBtn.classList.add('toggled'); return; }
       const overlay = d.createElement('div'); overlay.id='__mini_inspector_overlay__';
@@ -443,7 +456,8 @@
     form.addEventListener('submit',()=>{
       const n = normalizeInput(addr.value);
       if (active>=0) { tabs[active].url = n; addr.dataset.raw = n; }
-      setAddressBar(n);
+      setAddressBar(n, {force:true});   // force update even if focused
+      userEditing = false;              // release lock after submit
       frame.style.display = 'block';
       home.style.display  = 'none';
       setTimeout(updateTabMetaFromFrame, 700);
@@ -460,7 +474,7 @@
       if (target && target !== lastMeta.url){
         lastMeta.url = target;
         if (active>=0) tabs[active].url = target;
-        setAddressBar(target);
+        setAddressBar(target);          // skips if user is typing
       }
       updateTabMetaFromFrame();
     }
