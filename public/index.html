@@ -26,7 +26,6 @@
       linear-gradient(180deg, var(--grad-1) 0%, var(--grad-2) 55%, var(--grad-3) 100%);
   }
 
-  /* Collapse/Expand button */
   .chrome-toggle{
     position:fixed; top:10px; right:10px; z-index:10002;
     width:34px; height:34px; border-radius:10px;
@@ -42,7 +41,6 @@
     transform:translateY(-1px);
   }
 
-  /* Header chrome */
   .chrome{
     position:fixed; inset:0 0 auto 0; z-index:10000;
     backdrop-filter:saturate(120%) blur(10px);
@@ -61,7 +59,6 @@
   }
   .tabs-wrap::-webkit-scrollbar{ display:none }
 
-  /* Tabs */
   .tab{
     position:relative; display:flex; align-items:center; gap:8px;
     max-width:240px; white-space:nowrap; user-select:none; cursor:pointer;
@@ -102,7 +99,6 @@
   }
   .tab-add:hover{ border-color:var(--accent); background:linear-gradient(180deg, rgba(34,34,34,.96), rgba(22,22,22,.92)); transform:translateY(-1px); }
 
-  /* Omnibox row */
   .omnibox{ flex:1 1 auto; display:flex; align-items:center; gap:10px; padding:6px 12px; }
 
   .btn{
@@ -131,7 +127,6 @@
   }
   #sj-address::placeholder{ color:var(--fg-dim) }
 
-  /* Home */
   .home{ max-width:980px; margin:calc(var(--chrome-h) + 28px) auto 18vh; padding:0 18px; }
   html[data-collapsed="1"] .home{ margin:28px auto 18vh; }
   .hero{
@@ -145,10 +140,8 @@
   .links a{ color:var(--fg); text-decoration:none; border-bottom:1px dashed transparent; padding-bottom:1px }
   .links a:hover{ border-bottom-color:rgba(255,255,255,.12) }
 
-  /* Hide error hooks visually */
   #sj-error,#sj-error-code{ display:none }
 
-  /* Proxied surface */
   #sj-frame{
     position:fixed; left:0; right:0; top:var(--chrome-h);
     width:100vw; height:calc(100vh - var(--chrome-h));
@@ -156,7 +149,6 @@
   }
   html[data-collapsed="1"] #sj-frame{ top:0; height:100vh; }
 
-  /* Toast */
   .toast{
     position:fixed; top:10px; right:54px; z-index:10001;
     padding:10px 12px; border-radius:10px; border:1px solid var(--stroke);
@@ -170,7 +162,6 @@
   }
 </style>
 
-<!-- Scramjet runtime & your app scripts -->
 <script src="/scram/scramjet.all.js"></script>
 <script src="/baremux/index.js" defer></script>
 <script src="/epoxy/index.js" defer></script>
@@ -180,12 +171,10 @@
 <script src="index.js" defer></script>
 
 <script>
-  /* Default WISP over wss in prod */
   (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
 
   const LS_KEY = 'pt_chrome_collapsed';
 
-  /* Measure header -> set --chrome-h */
   function measureChrome(){
     const collapsed = document.documentElement.dataset.collapsed === '1';
     const c=document.querySelector('.chrome');
@@ -206,10 +195,8 @@
   addEventListener('resize',measureChrome);
 
   addEventListener('DOMContentLoaded',()=>{
-    /* restore collapsed state */
     setCollapsed(localStorage.getItem(LS_KEY) === '1');
 
-    /* DOM refs */
     const tabsWrap = document.getElementById('tabs');
     const addBtn   = document.getElementById('tab-add');
     const form     = document.getElementById('sj-form');
@@ -219,7 +206,6 @@
     const reloadBtn= document.getElementById('reload');
     const inspectBtn=document.getElementById('inspect');
 
-    /* State */
     let tabs=[]; let active=-1; let nextId=1; let inspectorOn=false;
 
     function toast(msg){
@@ -227,7 +213,6 @@
       document.body.appendChild(t); setTimeout(()=>t.remove(), 2200);
     }
 
-    /* Branding map for tab labels */
     const BRAND_MAP = {
       'tiktok.com':'TikTok','youtube.com':'YouTube','youtu.be':'YouTube',
       'instagram.com':'Instagram','x.com':'X','twitter.com':'Twitter',
@@ -249,7 +234,6 @@
       }
     }
 
-    /* Normalize input into a URL */
     function normalizeInput(q){
       q=(q||'').trim();
       if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) return 'https://www.google.com/search?q='+encodeURIComponent(q);
@@ -257,30 +241,37 @@
       return q.replace(/^http:\/\//i,'https://');
     }
 
-    /* Extract the true target URL from a Scramjet iframe src */
-    function extractTargetFromScramjet(src){
+    /* ==== NEW: decode full target (origin + appended path) from proxied URL ==== */
+    function extractTargetFromScramjet(proxiedHref){
       try{
-        const u = new URL(src, location.origin);
-        const idx = u.pathname.indexOf('/scramjet/');
-        if (idx === -1) return null;
-        const after = u.pathname.slice(idx + '/scramjet/'.length);
-        if (!after) return null;
-        // First try whole remainder
-        let decoded = decodeURIComponent(after);
-        try { new URL(decoded); return decoded; } catch(_){}
-        // Otherwise only up to first slash
-        const firstSlash = after.indexOf('/');
-        if (firstSlash > 0) {
-          decoded = decodeURIComponent(after.slice(0, firstSlash));
-          try { new URL(decoded); return decoded; } catch(_){}
+        const u = new URL(proxiedHref, location.origin);
+        const parts = u.pathname.split('/scramjet/');
+        if (parts.length < 2) return null;
+        const remainder = parts[1]; // "<encodedOrigin>[/optional/rest]"
+        const cut = remainder.indexOf('/');
+        const encodedOrigin = cut === -1 ? remainder : remainder.slice(0, cut);
+        const restPath = cut === -1 ? '' : remainder.slice(cut); // includes leading '/'
+
+        const base = decodeURIComponent(encodedOrigin); // e.g. "https://tiktok.com/"
+        // Build final URL: if restPath exists, resolve against base; else just base
+        let finalUrl;
+        try {
+          finalUrl = new URL(restPath || '/', base).href;
+        } catch {
+          finalUrl = base;
         }
-      }catch(_){}
-      return null;
+        // If the iframe also carries query/hash relevant to target, append them
+        // (Most proxies put query/hash into restPath already; this is defensive)
+        if (u.hash && !finalUrl.includes('#')) {
+          try { const tmp=new URL(finalUrl); tmp.hash=u.hash; finalUrl=tmp.href; } catch {}
+        }
+        return finalUrl.replace(/(?<=https?:\/\/[^/]+)\/{2,}/, '/'); // collapse accidental double slash
+      }catch(_){ return null; }
     }
 
-    /* === Show the EXACT URL in the input, keep tab label pretty === */
+    /* Show EXACT URL in the input; keep tab label pretty */
     function setAddressBar(rawUrl){
-      addr.value = rawUrl;                                     // exact URL in field
+      addr.value = rawUrl;
       if (active>=0) tabs[active].el.querySelector('.label').textContent = prettyLabel(rawUrl);
     }
 
@@ -333,7 +324,6 @@
       updateHome();
     }
 
-    /* Tab click/close delegation */
     tabsWrap.addEventListener('click', (e) => {
       const closeEl = e.target.closest('.close');
       if (closeEl) {
@@ -352,7 +342,6 @@
 
     addBtn.addEventListener('click',()=>addTab());
 
-    /* Reload behavior */
     reloadBtn.addEventListener('click',()=>{
       if (!tabs.length || active<0) return;
       const proxied = frame.getAttribute('src');
@@ -369,7 +358,7 @@
       }
     });
 
-    /* Mini Inspector */
+    /* Mini Inspector (unchanged) */
     function disableInspector(){
       try{
         const w = frame.contentWindow; const d = w.document;
@@ -488,27 +477,32 @@
     form.addEventListener('submit',()=>{
       const n = normalizeInput(addr.value);
       if (active>=0) { tabs[active].url = n; addr.dataset.raw = n; }
-      setAddressBar(n);           // exact URL in the field
+      setAddressBar(n);
       frame.style.display = 'block';
       home.style.display  = 'none';
       setTimeout(()=>{ if (inspectorOn) enableInspector(); }, 400);
     }, true);
 
-    /* Keep omnibox synced with iframe navigation */
+    /* ==== NEW: keep omnibox synced with SPA navigation inside iframe ==== */
+    function currentProxiedHref(){
+      try { return frame.contentWindow.location.href || ''; }  // preferred (same-origin via proxy)
+      catch { return frame.getAttribute('src') || ''; }        // fallback
+    }
+
     let lastTarget = null;
     function syncFromFrame(){
-      const src = frame.getAttribute('src') || '';
-      const target = extractTargetFromScramjet(src) || (addr.dataset.raw || null);
+      const proxiedHref = currentProxiedHref();
+      const target = extractTargetFromScramjet(proxiedHref) || (addr.dataset.raw || null);
       if (target && target !== lastTarget){
         lastTarget = target;
         if (active>=0) tabs[active].url = target;
-        setAddressBar(target);    // exact URL
+        setAddressBar(target);
       }
     }
     frame.addEventListener('load', syncFromFrame);
-    setInterval(syncFromFrame, 1200);
+    setInterval(syncFromFrame, 800); // a bit tighter to catch SPA route changes
 
-    /* Init app */
+    /* Init */
     function updateHome(){ const show = (!tabs.length || !tabs[active]?.url); home.style.display = show ? 'block' : 'none'; if (show) { frame.removeAttribute('src'); frame.style.display='none'; } }
     function addTab(initialUrl){
       const id=nextId++; const el=document.createElement('div');
@@ -522,30 +516,23 @@
 
     addTab(); updateHome(); measureChrome();
 
-    /* Collapse toggle button */
     document.getElementById('chrome-toggle').addEventListener('click', ()=>{
       const now = !(document.documentElement.dataset.collapsed === '1');
       setCollapsed(now);
     });
-
-    /* Close tab delegation already attached above */
   });
 </script>
 </head>
 
 <body>
-  <!-- Collapse/Expand -->
   <button id="chrome-toggle" class="chrome-toggle" title="Collapse" aria-label="Collapse">–</button>
 
-  <!-- Fixed header -->
   <div class="chrome" role="navigation" aria-label="Browser controls">
-    <!-- Tabs row -->
     <div class="row tabs">
       <div class="tabs-wrap" id="tabs" role="tablist" aria-label="Tabs">
         <button id="tab-add" class="tab-add" title="New tab">+</button>
       </div>
     </div>
-    <!-- Omnibox row -->
     <div class="row">
       <div class="omnibox">
         <button id="reload"  class="btn" title="Reload">↻</button>
@@ -558,7 +545,6 @@
     </div>
   </div>
 
-  <!-- Home -->
   <main class="home" id="home">
     <div class="hero">
       <h1 class="title">PROJECT TRINITY</h1>
@@ -572,10 +558,8 @@
     </div>
   </main>
 
-  <!-- Proxied surface -->
   <iframe id="sj-frame"></iframe>
 
-  <!-- Kept hooks -->
   <p id="sj-error"></p>
   <pre id="sj-error-code"></pre>
 </body>
