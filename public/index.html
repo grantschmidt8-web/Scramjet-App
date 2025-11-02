@@ -7,7 +7,7 @@
     <link rel="shortcut icon" content="favicon.webp" />
 
     <style>
-      :root { --fg:#fff; --bg:#000; }
+      :root { --fg:#fff; --bg:#000; --muted:#d0d0d0; }
       html,body { height:100%; }
       body {
         margin:0;
@@ -16,24 +16,44 @@
         font:16px/1.5 "Courier New", ui-monospace, monospace;
       }
 
-      .wrap {
-        max-width:780px;
-        margin:14vh auto 12vh;
-        padding:0 18px;
-      }
-
+      /* --- Layout --- */
+      .wrap { max-width:980px; margin:10vh auto 12vh; padding:0 18px; }
       .title { margin:0 0 10px; font-size:34px; font-weight:700; }
       .subtitle { margin:0 0 18px; color:#ddd; font-size:13px; }
 
-      /* Search form (keep Scramjet IDs) */
+      /* --- Tabs strip --- */
+      .tabs {
+        display:flex; align-items:stretch; gap:6px;
+        border:1px solid #fff; border-radius:6px; padding:6px; margin:0 0 10px;
+      }
+      .tab {
+        display:flex; align-items:center; gap:8px;
+        padding:6px 10px; border:1px solid transparent; border-radius:4px;
+        cursor:pointer; user-select:none; white-space:nowrap;
+        max-width: 220px;
+      }
+      .tab span.label { overflow:hidden; text-overflow:ellipsis; }
+      .tab.active { border-color:#fff; background:#000; }
+      .tab .close {
+        font:14px/1 "Courier New", ui-monospace, monospace;
+        opacity:.85; cursor:pointer;
+      }
+      .tab .close:hover { text-decoration:underline; }
+
+      .tab-add {
+        margin-left:auto; border:1px solid #fff; border-radius:4px; padding:6px 10px; cursor:pointer;
+        background:#000; color:#fff;
+      }
+      .tab-add:hover { background:#111; }
+
+      /* --- Address bar --- */
       .bar {
         display:flex; align-items:center;
-        border:1px solid #fff; border-radius:4px;
+        border:1px solid #fff; border-radius:6px;
         padding:12px 14px; margin:0;
       }
       #sj-address{
-        all:unset;
-        color:#fff; width:100%;
+        all:unset; color:#fff; width:100%;
         font:16px/1.4 "Courier New", ui-monospace, monospace;
       }
       #sj-address::placeholder{ color:#bfbfbf; }
@@ -46,74 +66,183 @@
       .links a{ color:#fff; text-decoration:none; border-bottom:1px solid transparent; }
       .links a:hover{ border-bottom-color:#fff; }
 
-      /* Keep hooks but hide error UI */
+      /* Hide error UI but keep hooks */
       #sj-error, #sj-error-code { display:none; }
 
-      /* Allow JS to show the iframe */
-      #sj-frame{
-        display:none;              /* JS will set display:block */
-        border:none;
-        position:fixed; inset:0;
-        width:100vw; height:100vh;
-        background:#000;
-        z-index: 9999;             /* ensure it covers the homepage when shown */
+      /* Frames container: each tab has an iframe; only active one is visible and gets id="sj-frame" */
+      .frames { position:relative; }
+      .frames iframe {
+        display:none; border:none; position:fixed; inset:0; width:100vw; height:100vh; background:#000; z-index:9999;
       }
+      .frames iframe.active { display:block; }
 
       @media (max-width:640px){
-        .wrap{ margin:11vh auto 9vh; }
+        .wrap{ margin:8vh auto 9vh; }
         .title{ font-size:28px; }
         .bar{ padding:14px 16px; }
         #sj-address{ font-size:16px; }
+        .tab { max-width: 160px; }
       }
     </style>
 
-    <!-- Transport/runtime & your scripts (order matters) -->
-    <!-- If your app serves these at /scram, /baremux, /epoxy, keep leading slashes. -->
+    <!-- If your build uses /scram + transports, keep these. Use relative paths if needed. -->
     <script src="/scram/scramjet.all.js"></script>
     <script src="/baremux/index.js" defer></script>
     <script src="/epoxy/index.js" defer></script>
 
-    <!-- Optional: Wisp client (harmless if unused, useful if your build uses Wisp) -->
+    <!-- Wisp client (harmless if unused; useful if your config uses it) -->
     <script src="https://unpkg.com/wisp-js/dist/wisp.min.js" defer></script>
 
     <script src="register-sw.js" defer></script>
     <script src="search.js" defer></script>
     <script src="index.js" defer></script>
 
-    <!-- Tiny safety shim: set WISP_URL default + force HTTPS inputs BEFORE your handlers run -->
+    <!-- Shim: default WISP_URL + https normalize BEFORE your handlers run -->
     <script>
-      // 1) Default WISP_URL if config.js (or your code) didn't set it
       (function(){
-        // Only set if not already defined and we're under HTTPS
         if (!('WISP_URL' in window) && location.protocol === 'https:') {
           window.WISP_URL = 'wss://' + location.host + '/wisp/';
         }
       })();
 
-      // 2) Normalize input to https/search before your existing submit handler runs
-      // Use capture=true so this fires before bubble-phase listeners in search.js
-      window.addEventListener('DOMContentLoaded', function(){
-        var form = document.getElementById('sj-form');
-        var addr = document.getElementById('sj-address');
-        if (!form || !addr) return;
+      // Basic normalizer
+      function normalizeInput(q) {
+        q = (q || '').trim();
+        if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) {
+          return 'https://www.google.com/search?q=' + encodeURIComponent(q);
+        }
+        if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && q.includes('.')) {
+          return 'https://' + q;
+        }
+        return q.replace(/^http:\/\//i, 'https://');
+      }
+    </script>
 
-        function normalizeInput(q) {
-          q = (q || '').trim();
-          // bare word → search
-          if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) {
-            return 'https://www.google.com/search?q=' + encodeURIComponent(q);
+    <!-- Tabs manager: guarantees the active frame always has id="sj-frame" -->
+    <script>
+      window.addEventListener('DOMContentLoaded', () => {
+        const tabsEl = document.getElementById('tabs');
+        const addEl = document.getElementById('tab-add');
+        const framesEl = document.getElementById('frames');
+        const form = document.getElementById('sj-form');
+        const addr = document.getElementById('sj-address');
+
+        let tabs = [];          // { id, el, frame, label }
+        let active = -1;
+        let nextId = 1;
+
+        function makeLabelFromInput(v){
+          try {
+            const url = new URL(v);
+            return url.hostname.replace(/^www\./,'');
+          } catch {
+            if (v.startsWith('https://www.google.com/search?q=')) return 'Search';
+            return (v.length>24? v.slice(0,24)+'…': v) || 'New Tab';
           }
-          // missing scheme → https
-          if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && q.includes('.')) {
-            return 'https://' + q;
-          }
-          // force https for http URLs
-          return q.replace(/^http:\/\//i, 'https://');
         }
 
-        form.addEventListener('submit', function(){
+        function setActive(newIndex){
+          if (newIndex === active || newIndex < 0 || newIndex >= tabs.length) return;
+          // deactivate current
+          if (active >= 0) {
+            tabs[active].el.classList.remove('active');
+            tabs[active].frame.classList.remove('active');
+            // remove id from old frame
+            tabs[active].frame.id = '';
+          }
+          active = newIndex;
+          tabs[active].el.classList.add('active');
+          tabs[active].frame.classList.add('active');
+          // give the active frame the magic id Scramjet expects
+          tabs[active].frame.id = 'sj-frame';
+          // sync address bar to this tab's current URL if it has one
+          try {
+            const src = tabs[active].frame.getAttribute('src') || '';
+            if (src) addr.placeholder = makeLabelFromInput(src);
+          } catch {}
+        }
+
+        function addTab(url){
+          const id = nextId++;
+          // tab button
+          const tabEl = document.createElement('div');
+          tabEl.className = 'tab';
+          tabEl.dataset.id = id;
+          tabEl.innerHTML = `<span class="label">New Tab</span><span class="close" title="Close">×</span>`;
+          tabsEl.insertBefore(tabEl, addEl);
+
+          // iframe for this tab
+          const frame = document.createElement('iframe');
+          frame.className = 'tab-frame';
+          framesEl.appendChild(frame);
+
+          const tab = { id, el: tabEl, frame, label: 'New Tab' };
+          tabs.push(tab);
+
+          // Activate immediately
+          setActive(tabs.length - 1);
+
+          // Optional initial URL
+          if (url) {
+            frame.src = url;
+            tab.label = makeLabelFromInput(url);
+            tabEl.querySelector('.label').textContent = tab.label;
+          }
+
+          // Click handlers
+          tabEl.addEventListener('click', (e) => {
+            if ((e.target).classList && (e.target).classList.contains('close')) return;
+            const idx = tabs.findIndex(t => t.id === id);
+            setActive(idx);
+          });
+          tabEl.querySelector('.close').addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeTabById(id);
+          });
+        }
+
+        function closeTabById(id){
+          const idx = tabs.findIndex(t => t.id === id);
+          if (idx === -1) return;
+          const wasActive = (idx === active);
+
+          // remove DOM
+          tabs[idx].el.remove();
+          tabs[idx].frame.remove();
+          // remove from list
+          tabs.splice(idx,1);
+
+          if (!tabs.length){
+            // ensure at least one new blank tab stays
+            addTab();
+            return;
+          }
+          if (wasActive){
+            // activate a sensible neighbor
+            setActive(Math.max(0, idx - 1));
+          } else {
+            // active index shifts left if removed index < active
+            if (idx < active) active -= 1;
+          }
+        }
+
+        // plus button
+        addEl.addEventListener('click', () => addTab());
+
+        // normalize inputs BEFORE your own submit handler runs (capture)
+        form.addEventListener('submit', () => {
           addr.value = normalizeInput(addr.value);
-        }, true); // capture
+          // Update current tab label
+          if (active >= 0) {
+            const label = makeLabelFromInput(addr.value);
+            tabs[active].el.querySelector('.label').textContent = label || 'New Tab';
+            // reveal frame right away; your search.js will set src
+            tabs[active].frame.style.display = 'block';
+          }
+        }, true);
+
+        // Create the initial tab (blank/home)
+        addTab();
       });
     </script>
   </head>
@@ -122,7 +251,13 @@
     <main class="wrap">
       <h2 class="title">PROJECT TRINITY</h2>
 
-      <!-- IDs must match Scramjet scripts -->
+      <!-- Tabs strip -->
+      <div class="tabs" id="tabs" role="tablist" aria-label="Tabs">
+        <!-- tabs inserted here -->
+        <button id="tab-add" class="tab-add" title="New tab">+</button>
+      </div>
+
+      <!-- Address bar (keep Scramjet IDs) -->
       <form id="sj-form" class="bar" autocomplete="off">
         <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
         <input id="sj-address" type="text" placeholder="URL or search…" spellcheck="false" inputmode="url" />
@@ -143,7 +278,7 @@
       </nav>
     </main>
 
-    <!-- Scramjet's rendering surface -->
-    <iframe id="sj-frame"></iframe>
+    <!-- Frames container: only the active iframe gets id="sj-frame" -->
+    <div class="frames" id="frames"></div>
   </body>
 </html>
