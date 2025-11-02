@@ -179,29 +179,22 @@
   .swatch[data-active="1"]::after{ content:"✓"; position:absolute; right:8px; bottom:6px; font-size:14px; opacity:.9; }
 </style>
 
-<!-- Runtime/transport -->
-<script src="/scram/scramjet.all.js"></script>
-<script src="/epoxy/index.js" defer></script>
-
-<!-- ✅ NEW: BareMux bootstrap (no local worker needed) -->
-<script src="/baremux/index.js" defer></script>
-
-<!-- (Optional) WISP helper lib you already used -->
-<script src="https://unpkg.com/wisp-js/dist/wisp.min.js" defer></script>
-
-<!-- Keep WISP default so the worker knows where to connect -->
+<!-- 1) Force absolute WISP endpoint early (before any client loads) -->
 <script>
-  if (!("WISP_URL" in window) && location.protocol === "https:") {
-    window.WISP_URL = "wss://" + location.host + "/wisp/";
-  }
+  window.WISP_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/wisp/';
 </script>
 
+<!-- Runtime/transport -->
+<script src="/scram/scramjet.all.js"></script>
+<script src="/baremux/index.js" defer></script>
+<script src="/epoxy/index.js" defer></script>
+<script src="https://unpkg.com/wisp-js/dist/wisp.min.js" defer></script>
 <script src="register-sw.js" defer></script>
 <script src="search.js" defer></script>
 <script src="index.js" defer></script>
 
 <script>
-  /* Force WISP default over HTTPS (safety if the block above moves) */
+  /* Force WISP default over HTTPS (kept for redundancy) */
   (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
 
   /* === Storage keys (dark-only) === */
@@ -287,15 +280,14 @@
       addrEl.style.webkitTextFillColor = fg;
       addrEl.style.caretColor = fg;
     }
-
     const headerFav = document.getElementById('site-favicon');
-    if (headerFav && (!headerFav.src)) headerFav.src = DARK_FAV;
+    if (headerFav && (!headerFav.src || headerFav.src === DARK_FAV)) headerFav.src = DARK_FAV;
     document.querySelectorAll('.tab .fav').forEach(img=>{
-      if (!img.getAttribute('data-has-real') && (!img.src)) img.src = DARK_FAV;
+      if (!img.getAttribute('data-has-real') && (!img.src || img.src===DARK_FAV)) img.src = DARK_FAV;
     });
     document.querySelectorAll('#omnibox-suggestions li').forEach(li=>{
       if (li.dataset.hasHostIcon !== '1') {
-        const img = li.querySelector('img.fav'); if (img && !img.src) img.src = DARK_FAV;
+        const img = li.querySelector('img.fav'); if (img) img.src = DARK_FAV;
       }
     });
   }
@@ -336,12 +328,10 @@
   addEventListener('resize',measureChrome);
 
   addEventListener('DOMContentLoaded',()=>{
-    // Init dark gradient
     if (!localStorage.getItem(LS_KEY_GRAD)) localStorage.setItem(LS_KEY_GRAD,'graphite');
     setGradientVars(localStorage.getItem(LS_KEY_GRAD));
     applyDarkTheme();
 
-    // Restore collapse
     setCollapsed(localStorage.getItem(LS_KEY_COLLAPSE) === '1');
 
     const tabsWrap   = document.getElementById('tabs');
@@ -521,10 +511,24 @@
     frame.addEventListener('load', ()=>setTimeout(updateTabMetaFromFrame, 150));
     setInterval(updateTabMetaFromFrame, 900);
 
-    /* Inspector stub (unchanged here) */
+    /* ---- WISP/Mux auto-recover: reconnect when the multiplexer dies ---- */
+    function tryRecoverMux(){
+      const src = frame && frame.getAttribute('src');
+      if (!src) return;
+      try { frame.contentWindow.location.reload(); }
+      catch { frame.src = src; }
+    }
+    function onMuxTaskEnded(e){
+      const msg = (e?.reason?.message || e?.message || '') + '';
+      if (msg.includes('MuxTaskEnded')) tryRecoverMux();
+    }
+    window.addEventListener('unhandledrejection', onMuxTaskEnded);
+    window.addEventListener('error', onMuxTaskEnded);
+
+    /* Inspector stub (kept minimal; enable when you add overlay) */
     function disableInspector(){ inspectorOn=false; document.getElementById('inspect')?.classList.remove('toggled'); }
-    function enableInspector(){ try { void frame.contentDocument; } catch { disableInspector(); return; } /* plug overlay if desired */ }
-    document.getElementById('inspect')?.addEventListener('click', ()=>{ if (inspectorOn){ try { frame.contentWindow.postMessage({__mini_inspector_cmd:'off'}, '*'); } catch(_){} disableInspector(); } else { enableInspector(); } });
+    function enableInspector(){ try { void frame.contentDocument; } catch { disableInspector(); return; } /* add overlay here if desired */ }
+    inspectBtn.addEventListener('click', ()=>{ if (inspectorOn){ try { frame.contentWindow.postMessage({__mini_inspector_cmd:'off'}, '*'); } catch(_){} disableInspector(); } else { enableInspector(); } });
 
     /* Settings pop (dark-only gradients) */
     function openSettingsAtButton(btn){
@@ -538,10 +542,11 @@
       const onEsc = (e)=>{ if (e.key==='Escape'){ settingsPop.style.display='none'; document.removeEventListener('mousedown', onDocClick, true); document.removeEventListener('keydown', onEsc, true);} };
       setTimeout(()=>{ document.addEventListener('mousedown', onDocClick, true); document.addEventListener('keydown', onEsc, true); },0);
     }
-    settingsBtn.addEventListener('click', ()=> openSettingsAtButton(settingsBtn));
+    document.getElementById('settings').addEventListener('click', ()=> openSettingsAtButton(document.getElementById('settings')));
     document.querySelectorAll('.swatch').forEach(sw=>{
       sw.addEventListener('click', ()=>{
-        const val = sw.dataset.value; if (!GRADS[val]) return;
+        const val = sw.dataset.value;
+        if (!GRADS[val]) return;
         setGradientVars(val);
         localStorage.setItem(LS_KEY_GRAD, val);
         document.body.style.background = buildBodyBackground();
@@ -728,17 +733,16 @@
 
     addr.addEventListener('input', ()=>{ refresh(addr.value||''); });
     addr.addEventListener('focus', ()=>{ refresh(addr.value||''); });
-
     addr.addEventListener('keydown', (e)=>{
-      const items = [...suggEl.querySelectorAll('li')];
+      const items = [...document.querySelectorAll('#omnibox-suggestions li')];
       if (!items.length) return;
       if (e.key === 'ArrowDown'){ e.preventDefault(); select( Math.min(items.length-1, activeIndex+1) ); }
       else if (e.key === 'ArrowUp'){ e.preventDefault(); select( Math.max(0, activeIndex-1) ); }
       else if (e.key === 'Enter'){ if (activeIndex>=0){ e.preventDefault(); apply(activeIndex); } }
       else if (e.key === 'Tab'){ if (activeIndex>=0){ e.preventDefault(); apply(activeIndex); } }
-      else if (e.key === 'Escape'){ suggEl.style.display='none'; }
+      else if (e.key === 'Escape'){ document.getElementById('omnibox-suggestions').style.display='none'; }
     });
-    addr.addEventListener('blur', ()=> setTimeout(()=>{ suggEl.style.display='none'; }, 120) );
+    addr.addEventListener('blur', ()=> setTimeout(()=>{ document.getElementById('omnibox-suggestions').style.display='none'; }, 120) );
   });
 </script>
 </head>
@@ -776,8 +780,9 @@
   <main class="home" id="home">
     <div class="hero">
       <h1 class="title">PROJECT TRINITY</h1>
-      <p class="subtitle">1.1.0</p>
+      <p class="subtitle">1.1.4</p>
       <div class="links">
+        <a href="credits.html">Credits</a><span>·</span>
         <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Github</a><span>·</span>
         <a href="https://www.trinity.gt.tc" target="_blank" rel="noopener">TRINITY</a><span>·</span>
         <span>PT © 2025</span>
