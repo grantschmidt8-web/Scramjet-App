@@ -8,18 +8,10 @@
 
 <style>
   :root{
-    /* Neutral black/gray palette */
-    --fg:#e6e6e6;          /* primary text */
-    --fg-dim:#bdbdbd;      /* secondary text */
-    --bg:#0a0a0a;          /* page background */
-    --grad-1:#0a0a0a;      /* top */
-    --grad-2:#0d0d0d;      /* mid */
-    --grad-3:#121212;      /* bottom */
-    --glass:#111111cc;     /* translucent chrome */
-    --stroke:#262626;      /* borders */
-    --accent:#8a8a8a;      /* subtle highlight (gray, not blue) */
-    --chrome-h:96px;       /* updated at runtime */
-    --radius:14px;
+    --fg:#e6e6e6; --fg-dim:#bdbdbd; --bg:#0a0a0a;
+    --grad-1:#0a0a0a; --grad-2:#0d0d0d; --grad-3:#121212;
+    --glass:#111111cc; --stroke:#262626; --accent:#8a8a8a;
+    --chrome-h:96px; --radius:14px;
     --shadow:0 10px 26px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.03);
   }
 
@@ -27,14 +19,13 @@
   html,body{ height:100% }
   body{
     margin:0; color:var(--fg);
-    font:14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans";
+    font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
     background:
       radial-gradient(1100px 520px at 80% -10%, rgba(140,140,140,.10) 0%, rgba(140,140,140,0) 60%),
       radial-gradient(900px 480px at -10% 110%, rgba(160,160,160,.08) 0%, rgba(160,160,160,0) 60%),
       linear-gradient(180deg, var(--grad-1) 0%, var(--grad-2) 55%, var(--grad-3) 100%);
   }
 
-  /* ===== Collapse toggle (fixed, top-right) ===== */
   .chrome-toggle{
     position:fixed; top:10px; right:10px; z-index:10002;
     width:34px; height:34px; border-radius:10px;
@@ -50,7 +41,6 @@
     transform:translateY(-1px);
   }
 
-  /* ===== Chrome (glass, darker, rounded) ===== */
   .chrome{
     position:fixed; inset:0 0 auto 0; z-index:10000;
     backdrop-filter:saturate(120%) blur(10px);
@@ -58,7 +48,6 @@
     border-bottom:1px solid var(--stroke);
     box-shadow:var(--shadow);
   }
-  /* Hidden when collapsed */
   html[data-collapsed="1"] .chrome{ display:none; }
 
   .row{ display:flex; align-items:center; gap:10px; padding:10px 12px; }
@@ -70,7 +59,6 @@
   }
   .tabs-wrap::-webkit-scrollbar{ display:none }
 
-  /* ===== Tabs (pilled, neutral) ===== */
   .tab{
     position:relative; display:flex; align-items:center; gap:8px;
     max-width:240px; white-space:nowrap; user-select:none; cursor:pointer;
@@ -111,7 +99,6 @@
   }
   .tab-add:hover{ border-color:var(--accent); background:linear-gradient(180deg, rgba(34,34,34,.96), rgba(22,22,22,.92)); transform:translateY(-1px); }
 
-  /* ===== Address row ===== */
   .omnibox{ flex:1 1 auto; display:flex; align-items:center; gap:10px; padding:6px 12px; }
 
   .btn{
@@ -136,14 +123,12 @@
 
   #sj-address{
     all:unset; color:var(--fg); width:100%;
-    font:14px/1.3 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
+    font:14px/1.3 system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   }
   #sj-address::placeholder{ color:var(--fg-dim) }
 
-  /* ===== Home card (neutral) ===== */
   .home{ max-width:980px; margin:calc(var(--chrome-h) + 28px) auto 18vh; padding:0 18px; }
-  html[data-collapsed="1"] .home{ margin:28px auto 18vh; } /* when collapsed, header height is 0 */
-
+  html[data-collapsed="1"] .home{ margin:28px auto 18vh; }
   .hero{
     padding:24px; border:1px solid var(--stroke); border-radius:var(--radius);
     background:linear-gradient(180deg, rgba(22,22,22,.78), rgba(14,14,14,.72));
@@ -155,22 +140,17 @@
   .links a{ color:var(--fg); text-decoration:none; border-bottom:1px dashed transparent; padding-bottom:1px }
   .links a:hover{ border-bottom-color:rgba(255,255,255,.12) }
 
-  /* hide error hooks visually */
   #sj-error,#sj-error-code{ display:none }
 
-  /* ===== Result surface ===== */
   #sj-frame{
     position:fixed; left:0; right:0; top:var(--chrome-h);
     width:100vw; height:calc(100vh - var(--chrome-h));
     border:none; background:#0b0b0b; z-index:9999; display:none;
   }
-  html[data-collapsed="1"] #sj-frame{
-    top:0; height:100vh;   /* use full screen when header is collapsed */
-  }
+  html[data-collapsed="1"] #sj-frame{ top:0; height:100vh; }
 
-  /* Toast */
   .toast{
-    position:fixed; top:10px; right:54px; z-index:10001; /* leave room for toggle */
+    position:fixed; top:10px; right:54px; z-index:10001;
     padding:10px 12px; border-radius:10px; border:1px solid var(--stroke);
     background:linear-gradient(180deg, rgba(20,20,20,.96), rgba(14,14,14,.9));
     box-shadow:var(--shadow); color:var(--fg); font-size:12px;
@@ -182,7 +162,6 @@
   }
 </style>
 
-<!-- Runtime/transport (fix paths if not at root) -->
 <script src="/scram/scramjet.all.js"></script>
 <script src="/baremux/index.js" defer></script>
 <script src="/epoxy/index.js" defer></script>
@@ -192,19 +171,16 @@
 <script src="index.js" defer></script>
 
 <script>
-  /* HTTPS default for WISP if not set */
   (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
 
   const LS_KEY = 'pt_chrome_collapsed';
 
-  /* Header height → push iframe under it */
   function measureChrome(){
     const collapsed = document.documentElement.dataset.collapsed === '1';
     const c=document.querySelector('.chrome');
     const h = collapsed || !c ? 0 : Math.ceil(c.getBoundingClientRect().height);
     document.documentElement.style.setProperty('--chrome-h', h+'px');
   }
-
   function setCollapsed(on){
     document.documentElement.dataset.collapsed = on ? '1' : '0';
     localStorage.setItem(LS_KEY, on ? '1' : '0');
@@ -218,12 +194,11 @@
   }
 
   addEventListener('resize',measureChrome);
+
   addEventListener('DOMContentLoaded',()=>{
-    /* restore collapse state */
     const startCollapsed = localStorage.getItem(LS_KEY) === '1';
     setCollapsed(startCollapsed);
 
-    /* tabs/omnibox app logic */
     const tabsWrap = document.getElementById('tabs');
     const addBtn   = document.getElementById('tab-add');
     const form     = document.getElementById('sj-form');
@@ -240,13 +215,7 @@
       document.body.appendChild(t); setTimeout(()=>t.remove(), 2200);
     }
 
-    function normalizeInput(q){
-      q=(q||'').trim();
-      if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) return 'https://www.google.com/search?q='+encodeURIComponent(q);
-      if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) &&  q.includes('.')) return 'https://'+q;
-      return q.replace(/^http:\/\//i,'https://');
-    }
-
+    /* Brand labels */
     const BRAND_MAP = {
       'tiktok.com':'TikTok','youtube.com':'YouTube','youtu.be':'YouTube',
       'instagram.com':'Instagram','x.com':'X','twitter.com':'Twitter',
@@ -268,6 +237,45 @@
       }
     }
 
+    /* Normalize input for navigation */
+    function normalizeInput(q){
+      q=(q||'').trim();
+      if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) return 'https://www.google.com/search?q='+encodeURIComponent(q);
+      if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) &&  q.includes('.')) return 'https://'+q;
+      return q.replace(/^http:\/\//i,'https://');
+    }
+
+    /* === NEW: figure out the proxied target from iframe/src === */
+    function extractTargetFromScramjet(src){
+      try{
+        const u = new URL(src, location.origin);
+        // Expect something like /scramjet/https%3A%2F%2Fexample.com%2F...
+        const idx = u.pathname.indexOf('/scramjet/');
+        if (idx === -1) return null;
+        const after = u.pathname.slice(idx + '/scramjet/'.length);
+        if (!after) return null;
+        // Decode the leading encoded target. Stop at first unencoded slash that belongs to proxy path continuation.
+        // Try decode all; if not a valid URL, attempt up to first slash.
+        let decoded = decodeURIComponent(after);
+        try { new URL(decoded); return decoded; } catch(_){}
+        const firstSlash = after.indexOf('/');
+        if (firstSlash > 0) {
+          decoded = decodeURIComponent(after.slice(0, firstSlash));
+          try { new URL(decoded); return decoded; } catch(_){}
+        }
+      }catch(_){}
+      return null;
+    }
+
+    /* === NEW: push label into the UI === */
+    function setAddressLabel(urlLike){
+      const label = labelFrom(urlLike);
+      addr.value = label;                          // show friendly label in the bar
+      if (active>=0) {
+        tabs[active].el.querySelector('.label').textContent = label;
+      }
+    }
+
     function updateHome(){
       const show = (!tabs.length || !tabs[active]?.url);
       home.style.display = show ? 'block' : 'none';
@@ -280,13 +288,13 @@
       active=idx; tabs[active].el.classList.add('active');
 
       const url=tabs[active].url||'';
-      addr.placeholder = url ? labelFrom(url) : 'URL or search…';
-
       if (url) {
-        addr.value = url;
+        setAddressLabel(url);                      // NEW: show label on tab switch
+        addr.dataset.raw = url;                    // keep raw url in a data attr
         if (form.requestSubmit) form.requestSubmit();
         else form.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
       } else {
+        addr.value = ''; addr.placeholder = 'URL or search…';
         frame.removeAttribute('src'); frame.style.display='none';
       }
       updateHome();
@@ -318,7 +326,6 @@
       updateHome();
     }
 
-    /* Delegation for tabs/close */
     tabsWrap.addEventListener('click', (e) => {
       const closeEl = e.target.closest('.close');
       if (closeEl) {
@@ -335,10 +342,8 @@
       }
     });
 
-    /* + tab */
     addBtn.addEventListener('click',()=>addTab());
 
-    /* Reload */
     reloadBtn.addEventListener('click',()=>{
       if (!tabs.length || active<0) return;
       const proxied = frame.getAttribute('src');
@@ -348,13 +353,14 @@
       } else {
         const raw = tabs[active].url || '';
         if (!raw) return;
-        addr.value = raw;
+        addr.dataset.raw = raw;
+        setAddressLabel(raw);                      // NEW: keep label visible on reload
         if (form.requestSubmit) form.requestSubmit();
         else form.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
       }
     });
 
-    /* Mini Inspector (</>) */
+    /* Mini Inspector (unchanged core) */
     function disableInspector(){
       try{
         const w = frame.contentWindow; const d = w.document;
@@ -400,12 +406,10 @@
           <button id="__mi_delete__" style="background:transparent;color:#ff8f8f;border:1px solid rgba(255,143,143,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Delete Node</button>
         </div>
       `;
-
       d.body.appendChild(overlay); d.body.appendChild(panel);
 
       let current=null;
       function fmt(el){ if(!el) return ''; const tag=el.tagName.toLowerCase(); const id=el.id?`#${el.id}`:''; const cls=(el.className && typeof el.className==='string')?'.'+el.className.trim().split(/\s+/).join('.') : ''; return `${tag}${id}${cls}`; }
-
       w.__mini_inspector_move = function(ev){
         if (!ev.target || ev.target===overlay || ev.target===panel || panel.contains(ev.target)) return;
         const el=ev.target, r=el.getBoundingClientRect?.(); if(!r) return;
@@ -470,25 +474,39 @@
       } else { enableInspector(); }
     });
 
-    /* Submit hook: normalize + remember tab URL + show frame */
+    /* Submit: navigate + show label immediately */
     form.addEventListener('submit',()=>{
       const n = normalizeInput(addr.value);
-      addr.value = n;
       if (active>=0) {
         tabs[active].url = n;
-        tabs[active].el.querySelector('.label').textContent = labelFrom(n);
+        addr.dataset.raw = n;
       }
+      setAddressLabel(n);                 // NEW: show friendly label immediately
       frame.style.display = 'block';
       home.style.display  = 'none';
       setTimeout(()=>{ if (inspectorOn) enableInspector(); }, 400);
     }, true);
 
-    /* Init */
-    addTab(); updateHome(); measureChrome();
+    /* === NEW: keep omnibox label in sync with iframe navigation === */
+    let lastTarget = null;
+    function syncFromFrame(){
+      const src = frame.getAttribute('src') || '';
+      const target = extractTargetFromScramjet(src) || (addr.dataset.raw || null);
+      if (target && target !== lastTarget){
+        lastTarget = target;
+        if (active>=0) tabs[active].url = target;
+        setAddressLabel(target);
+      }
+    }
+    frame.addEventListener('load', syncFromFrame);
+    setInterval(syncFromFrame, 1200);    // light polling for in-iframe nav
 
-    /* Toggle control */
-    const toggle = document.getElementById('chrome-toggle');
-    toggle.addEventListener('click', ()=>{
+    /* Init */
+    function measureAndInit(){ measureChrome(); }
+    addTab(); updateHome(); measureAndInit();
+
+    /* Collapse toggle */
+    document.getElementById('chrome-toggle').addEventListener('click', ()=>{
       const now = !(document.documentElement.dataset.collapsed === '1');
       setCollapsed(now);
     });
@@ -497,19 +515,14 @@
 </head>
 
 <body>
-  <!-- Collapse/Expand button -->
   <button id="chrome-toggle" class="chrome-toggle" title="Collapse" aria-label="Collapse">–</button>
 
-  <!-- Fixed header -->
   <div class="chrome" role="navigation" aria-label="Browser controls">
-    <!-- Row 1: Tabs -->
     <div class="row tabs">
       <div class="tabs-wrap" id="tabs" role="tablist" aria-label="Tabs">
-        <!-- tabs inserted dynamically -->
         <button id="tab-add" class="tab-add" title="New tab">+</button>
       </div>
     </div>
-    <!-- Row 2: Omnibox -->
     <div class="row">
       <div class="omnibox">
         <button id="reload"  class="btn" title="Reload">↻</button>
@@ -522,7 +535,6 @@
     </div>
   </div>
 
-  <!-- Home -->
   <main class="home" id="home">
     <div class="hero">
       <h1 class="title">PROJECT TRINITY</h1>
@@ -536,10 +548,8 @@
     </div>
   </main>
 
-  <!-- Single iframe under the fixed header -->
   <iframe id="sj-frame"></iframe>
 
-  <!-- Hooks (kept) -->
   <p id="sj-error"></p>
   <pre id="sj-error-code"></pre>
 </body>
