@@ -110,6 +110,35 @@
   #sj-address{ all:unset; color:var(--fg); width:100%; font:14px/1.3 system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial; }
   #sj-address::placeholder{ color:var(--fg-dim) }
 
+  /* ---- Omnibox suggestions ---- */
+  .sugg-wrap{ position:relative; flex:1 1 auto; min-width:160px; }
+  #omnibox-suggestions{
+    position:absolute; left:0; right:0; top:calc(100% + 6px);
+    margin:0; padding:6px; list-style:none; z-index:10006;
+    border:1px solid var(--stroke); border-radius:12px;
+    background:linear-gradient(180deg, rgba(24,24,24,.98), rgba(16,16,16,.94));
+    box-shadow:0 16px 40px rgba(0,0,0,.65);
+    max-height:46vh; overflow:auto; display:none;
+  }
+  #omnibox-suggestions li{
+    display:flex; align-items:center; gap:10px;
+    padding:8px 10px; border-radius:10px; cursor:pointer;
+    color:var(--fg); border:1px solid transparent;
+  }
+  #omnibox-suggestions li small{ color:var(--fg-dim) }
+  #omnibox-suggestions li .fav{
+    width:16px; height:16px; border-radius:4px; object-fit:cover;
+    background:#1a1a1a; border:1px solid #2a2a2a; flex:0 0 16px;
+  }
+  #omnibox-suggestions li[aria-selected="true"]{
+    border-color:var(--accent);
+    background:linear-gradient(180deg, rgba(34,34,34,.96), rgba(22,22,22,.92));
+  }
+  :root[data-theme="light"] #omnibox-suggestions{
+    background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(246,246,246,.96));
+    box-shadow:0 16px 40px rgba(0,0,0,.18);
+  }
+
   .home{ max-width:980px; margin:calc(var(--chrome-h) + 28px) auto 18vh; padding:0 18px; }
   html[data-collapsed="1"] .home{ margin:28px auto 18vh; }
   .hero{ padding:24px; border:1px solid var(--stroke); border-radius:var(--radius);
@@ -180,7 +209,7 @@
 <script src="/epoxy/index.js" defer></script>
 <script src="https://unpkg.com/wisp-js/dist/wisp.min.js" defer></script>
 <script src="register-sw.js" defer></script>
-<!-- search.js can stay, but we no longer rely on it -->
+<!-- search.js can stay, but navigation is driven here -->
 <script src="search.js" defer></script>
 <script src="index.js" defer></script>
 
@@ -331,10 +360,6 @@
     applyThemeIcons(name);
   }
 
-  function buildBodyGradient(theme){
-    return buildBodyBackground(theme);
-  }
-
   function measureChrome(){
     const collapsed = document.documentElement.dataset.collapsed === '1';
     const c=document.querySelector('.chrome');
@@ -398,7 +423,7 @@
     const settingsBtn= document.getElementById('settings');
     const settingsPop= document.getElementById('settings-pop');
 
-    if (headerFav) headerFav.src = currentDefaultFav();
+    if (headerFav) headerFav.src = (document.documentElement.dataset.theme==='light') ? LIGHT_FAV : DARK_FAV;
 
     let tabs=[]; let active=-1; let nextId=1; let inspectorOn=false;
     let userEditing=false;
@@ -435,7 +460,7 @@
       const id=nextId++;
       const el=document.createElement('div');
       el.className='tab'; el.dataset.id=id;
-      el.innerHTML=`<img class="fav" alt="" src="${currentDefaultFav()}" referrerpolicy="no-referrer" crossorigin="anonymous"/>
+      el.innerHTML=`<img class="fav" alt="" src="${(document.documentElement.dataset.theme==='light') ? LIGHT_FAV : DARK_FAV}" referrerpolicy="no-referrer" crossorigin="anonymous"/>
                     <span class="label">New Tab</span>
                     <span class="close" title="Close" aria-label="Close">×</span>`;
       tabsWrap.insertBefore(el, addBtn);
@@ -474,6 +499,7 @@
       home.style.display  = 'none';
       setTimeout(updateTabMetaFromFrame, 700);
     }
+    window.go = go; // expose for suggestions hook
 
     function setActive(idx){
       if (idx===active || idx<0 || idx>=tabs.length) return;
@@ -503,7 +529,7 @@
       let i=0;
       function next(){
         if(!candidates || i>=candidates.length){
-          const def = currentDefaultFav();
+          const def = (document.documentElement.dataset.theme==='light') ? LIGHT_FAV : DARK_FAV;
           if(headerFav) headerFav.src=def;
           if(tabImg) tabImg.src=def;
           return;
@@ -559,7 +585,7 @@
     frame.addEventListener('load', ()=>setTimeout(updateTabMetaFromFrame, 150));
     setInterval(updateTabMetaFromFrame, 900);
 
-    /* Mini Inspector (unchanged core) */
+    /* Mini Inspector */
     function disableInspector(){
       try{
         const w = frame.contentWindow; const d = w.document;
@@ -637,10 +663,9 @@
     inspectBtn.addEventListener('click', ()=>{ if (inspectorOn) { try { frame.contentWindow.postMessage({__mini_inspector_cmd:'off'}, '*'); } catch(_){ } disableInspector(); } else { enableInspector(); } });
 
     /* Settings popover */
-    function defaultGradFor(theme){ return theme === 'light' ? 'paper' : 'graphite'; }
     function openSettingsAtButton(btn){
       const curTheme = document.documentElement.dataset.theme || 'dark';
-      const curGrad  = (curTheme==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(curTheme);
+      const curGrad  = (curTheme==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || (curTheme==='light'?'paper':'graphite');
       document.querySelectorAll('.chip[data-group="theme"]').forEach(el=>{ el.dataset.active = (el.dataset.value===curTheme?'1':'0'); });
       document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el.dataset.value===curGrad?'1':'0'); });
       const r = btn.getBoundingClientRect(); const margin = 8;
@@ -654,7 +679,7 @@
     settingsBtn.addEventListener('click', ()=> {
       openSettingsAtButton(settingsBtn);
       const th = document.documentElement.dataset.theme || 'dark';
-      const cur= (th==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(th);
+      const cur= (th==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || (th==='light'?'paper':'graphite');
       document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el.dataset.value===cur?'1':'0'); });
     });
     document.querySelectorAll('.chip[data-group="theme"]').forEach(ch=>{
@@ -663,7 +688,7 @@
         applyTheme(val);
         document.querySelectorAll('.chip[data-group="theme"]').forEach(el=>{ el.dataset.active = (el===ch?'1':'0'); });
         const th = document.documentElement.dataset.theme || 'dark';
-        const cur= (th==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(th);
+        const cur= (th==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || (th==='light'?'paper':'graphite');
         document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el.dataset.value===cur?'1':'0'); });
       });
     });
@@ -674,7 +699,7 @@
         if (!GRADS[val] || GRADS[val].theme !== th) return;
         setGradientVars(val);
         localStorage.setItem(th==='light' ? LS_KEY_GRAD_LIGHT : LS_KEY_GRAD_DARK, val);
-        document.body.style.background = buildBodyGradient(th);
+        document.body.style.background = buildBodyBackground(th);
         document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el===sw?'1':'0'); });
       });
     });
@@ -685,6 +710,172 @@
 
     /* Init */
     addTab(); updateHome(); measureChrome();
+
+    /* ---------- Omnibox suggestions (merged) ---------- */
+    const suggEl = document.getElementById('omnibox-suggestions');
+    const LS_HISTORY = 'pt_history_urls';
+    const DEF_FAV = () => (document.documentElement.dataset.theme==='light' ? LIGHT_FAV : DARK_FAV);
+
+    const COMMON = [
+      {label:'YouTube', url:'https://www.youtube.com', icon:'https://www.youtube.com/s/desktop/386c7b5e/img/favicon_32x32.png'},
+      {label:'YouTube Studio', url:'https://studio.youtube.com'},
+      {label:'YouTube Shorts', url:'https://www.youtube.com/shorts'},
+      {label:'TikTok', url:'https://www.tiktok.com'},
+      {label:'Instagram', url:'https://www.instagram.com'},
+      {label:'Reddit', url:'https://www.reddit.com'},
+      {label:'Wikipedia', url:'https://www.wikipedia.org'},
+      {label:'GitHub', url:'https://github.com'},
+      {label:'Google', url:'https://www.google.com'},
+      {label:'OpenAI', url:'https://openai.com'}
+    ];
+
+    function loadHistory(){
+      try { return JSON.parse(localStorage.getItem(LS_HISTORY)||'[]'); } catch { return []; }
+    }
+    function saveHistory(url){
+      if (!url) return;
+      const list = loadHistory().filter(u=>u!==url);
+      list.unshift(url);
+      while (list.length>50) list.pop();
+      localStorage.setItem(LS_HISTORY, JSON.stringify(list));
+    }
+
+    // wrap go() to save history
+    const __oldGo = window.go;
+    window.go = function(raw){
+      __oldGo.call(this, raw);
+      try {
+        const n = normalizeInput((raw||'').trim());
+        saveHistory(n);
+      } catch {}
+    };
+
+    function currentEngine(){
+      const e = document.getElementById('sj-search-engine')?.value || 'https://www.google.com/search?q=%s';
+      return e;
+    }
+
+    function originFavicon(u){
+      try{ const o=new URL(u).origin; return o+'/favicon.ico'; }catch{ return DEF_FAV(); }
+    }
+    function hostFromUrl(u){ try{ return new URL(u).hostname.replace(/^www\./,''); }catch{ return u; } }
+    function urlHost(u){ return hostFromUrl(u); }
+    function trimUrl(u){ return u.replace(/^https?:\/\//,''); }
+
+    function makeItems(qRaw){
+      const q = (qRaw||'').trim();
+      const items = [];
+      if (!q){
+        const hist = loadHistory().slice(0,6).map(u=>({type:'history', label:u, sub:urlHost(u), value:u, icon:originFavicon(u)}));
+        const pop  = COMMON.slice(0,6).map(p=>({type:'common', label:p.label, sub:hostFromUrl(p.url), value:p.url, icon:p.icon||originFavicon(p.url)}));
+        return [...hist, ...pop];
+      }
+      const looksDomainish = /^[a-z0-9.-]+$/i.test(q) && q.includes('.');
+
+      COMMON.forEach(p=>{
+        if (p.label.toLowerCase().startsWith(q.toLowerCase()) || p.url.toLowerCase().includes(q.toLowerCase())){
+          items.push({type:'brand', label:p.label, sub:p.url, value:p.url, icon:p.icon||originFavicon(p.url)});
+        }
+      });
+
+      if (!q.includes(' ') && !/^[a-z][a-z0-9+.-]*:\/\//i.test(q)){
+        const dotCom = 'https://' + q.toLowerCase().replace(/\s+/g,'') + '.com';
+        items.push({type:'domain', label:dotCom.replace(/^https?:\/\//,''), sub:'Go to site', value:dotCom, icon:originFavicon(dotCom)});
+      }
+
+      if (looksDomainish){
+        const https = 'https://' + q.replace(/^www\./i,'');
+        items.push({type:'domain', label:q.replace(/^www\./i,''), sub:'Go to site', value:https, icon:originFavicon(https)});
+      }
+
+      const engine = currentEngine();
+      items.push({type:'search', label:q, sub:'Search', value:engine.replace('%s', encodeURIComponent(q)), icon:DEF_FAV()});
+
+      loadHistory().forEach(u=>{
+        if (u.toLowerCase().includes(q.toLowerCase())) items.push({type:'history', label:trimUrl(u), sub:urlHost(u), value:u, icon:originFavicon(u)});
+      });
+
+      const seen = new Set(); const out=[];
+      for (const it of items){
+        if (seen.has(it.value)) continue;
+        seen.add(it.value); out.push(it);
+        if (out.length>=12) break;
+      }
+      return out;
+    }
+
+    let activeIndex = -1;
+    let currentItems = [];
+
+    function render(list){
+      currentItems = list;
+      suggEl.innerHTML = '';
+      activeIndex = -1;
+      if (!list.length){ suggEl.style.display='none'; return; }
+      for (let i=0;i<list.length;i++){
+        const it = list[i];
+        const li = document.createElement('li');
+        li.setAttribute('role','option');
+        li.dataset.index = String(i);
+
+        const img = document.createElement('img');
+        img.className='fav';
+        img.alt='';
+        img.referrerPolicy='no-referrer';
+        img.crossOrigin='anonymous';
+        img.src = it.icon || DEF_FAV();
+
+        const main = document.createElement('span');
+        main.textContent = it.label;
+
+        const sub = document.createElement('small');
+        sub.textContent = it.sub || '';
+
+        li.appendChild(img);
+        li.appendChild(main);
+        li.appendChild(sub);
+
+        li.addEventListener('mouseenter', ()=>select(i));
+        li.addEventListener('mousedown', (e)=>{ e.preventDefault(); });
+        li.addEventListener('click', ()=>apply(i));
+
+        suggEl.appendChild(li);
+      }
+      suggEl.style.display='block';
+    }
+
+    function select(i){
+      const items = [...suggEl.querySelectorAll('li')];
+      items.forEach(n=>n.setAttribute('aria-selected','false'));
+      if (i>=0 && i<items.length){
+        items[i].setAttribute('aria-selected','true');
+        activeIndex = i;
+        try { addr.value = decodeURIComponent(currentItems[i].value); } catch { addr.value = currentItems[i].value; }
+        addr.setSelectionRange(addr.value.length, addr.value.length);
+      }
+    }
+
+    function apply(i){
+      if (i<0 || i>=currentItems.length) return;
+      const val = currentItems[i].value;
+      suggEl.style.display='none';
+      addr.value = val;
+      form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}));
+    }
+
+    addr.addEventListener('input', ()=>{ render(makeItems(addr.value||'')); });
+    addr.addEventListener('focus', ()=>{ render(makeItems(addr.value||'')); });
+
+    addr.addEventListener('keydown', (e)=>{
+      const items = [...suggEl.querySelectorAll('li')];
+      if (!items.length) return;
+      if (e.key === 'ArrowDown'){ e.preventDefault(); select( Math.min(items.length-1, activeIndex+1) ); }
+      else if (e.key === 'ArrowUp'){ e.preventDefault(); select( Math.max(0, activeIndex-1) ); }
+      else if (e.key === 'Enter'){ if (activeIndex>=0){ e.preventDefault(); apply(activeIndex); } }
+      else if (e.key === 'Tab'){ if (activeIndex>=0){ e.preventDefault(); apply(activeIndex); } }
+      else if (e.key === 'Escape'){ suggEl.style.display='none'; }
+    });
+    addr.addEventListener('blur', ()=> setTimeout(()=>{ suggEl.style.display='none'; }, 120) );
   });
 </script>
 </head>
@@ -703,10 +894,14 @@
         <button id="settings" class="btn icon" title="Settings">⚙️</button>
         <button id="chrome-toggle" class="btn icon" title="Collapse" aria-label="Collapse">–</button>
         <img id="site-favicon" alt="" src="" referrerpolicy="no-referrer" crossorigin="anonymous" />
-        <form id="sj-form" class="bar" autocomplete="off" role="search">
-          <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
-          <input id="sj-address" type="text" placeholder="URL or search…" spellcheck="false" inputmode="url" />
-        </form>
+        <!-- SEARCH FORM WRAPPED FOR SUGGESTIONS -->
+        <div class="sugg-wrap">
+          <form id="sj-form" class="bar" autocomplete="off" role="search">
+            <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
+            <input id="sj-address" type="text" placeholder="URL or search…" spellcheck="false" inputmode="url" />
+          </form>
+          <ul id="omnibox-suggestions" role="listbox" aria-label="Suggestions"></ul>
+        </div>
       </div>
     </div>
   </div>
