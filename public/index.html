@@ -8,6 +8,7 @@
 
 <style>
   :root{
+    /* Fixed DARK theme tokens (light removed) */
     --fg:#e6e6e6; --fg-dim:#bdbdbd; --bg:#0a0a0a;
     --grad-1:#0a0a0a; --grad-2:#0d0d0d; --grad-3:#121212;
     --stroke:#262626; --accent:#8a8a8a; --chrome-h:96px; --radius:14px; --tab-h:34px;
@@ -76,6 +77,7 @@
     box-shadow:inset 0 1px 0 rgba(255,255,255,.03), 0 6px 18px rgba(0,0,0,.45);
   }
   .btn.icon{ width:34px; min-width:34px; padding:0; font-size:16px; }
+  .btn.toggled{ outline:2px solid rgba(255,255,255,.08) }
 
   #site-favicon{ width:18px; height:18px; border-radius:4px; object-fit:cover; background:#1a1a1a; border:1px solid #2a2a2a; }
 
@@ -88,7 +90,7 @@
     box-shadow:inset 0 1px 0 rgba(255,255,255,.03), 0 6px 18px rgba(0,0,0,.45);
   }
 
-  /* Address input respects theme fully */
+  /* Address input = dark theme */
   #sj-address{
     all:unset;
     color:var(--fg);
@@ -97,10 +99,7 @@
     width:100%;
     font:14px/1.3 system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   }
-  #sj-address::placeholder{
-    color:var(--fg-dim);
-    opacity:.85;
-  }
+  #sj-address::placeholder{ color:var(--fg-dim); opacity:.85; }
 
   /* Suggestions */
   .sugg-wrap{ position:relative; flex:1 1 auto; min-width:160px; }
@@ -148,7 +147,7 @@
   }
   html[data-collapsed="1"] #sj-frame{ top:0; height:100vh; }
 
-  /* Collapse FAB (always clickable when collapsed) */
+  /* Collapse FAB */
   .fab{
     position:fixed; top:10px; right:12px; z-index:10005;
     border:1px solid var(--stroke);
@@ -160,21 +159,16 @@
   }
   html[data-collapsed="1"] #chrome-fab{ display:flex; }
 
-  /* Settings pop */
+  /* Settings pop (dark-only, more gradients) */
   .settings-pop{
     position:fixed; z-index:10004; display:none;
     border:1px solid var(--stroke); border-radius:12px; padding:12px;
     background:linear-gradient(180deg, rgba(24,24,24,.98), rgba(16,16,16,.94));
-    box-shadow:var(--shadow); color:var(--fg); width:min(420px, calc(100vw - 20px));
+    box-shadow:var(--shadow); color:var(--fg); width:min(520px, calc(100vw - 20px));
   }
   .settings-pop h4{ margin:0 0 8px; font-size:14px; }
   .settings-group{ margin-bottom:10px; }
   .settings-row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  .chip{
-    border:1px solid var(--stroke); border-radius:10px; padding:6px 10px; cursor:pointer;
-    background:linear-gradient(180deg, rgba(26,26,26,.95), rgba(18,18,18,.9)); color:var(--fg);
-  }
-  .chip[data-active="1"]{ outline:2px solid rgba(255,255,255,.10) }
   .swatch{
     width:84px; height:40px; border-radius:10px; border:2px solid var(--stroke);
     cursor:pointer; position:relative; box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
@@ -183,15 +177,6 @@
   .swatch:hover{ border-color: var(--accent); box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 6px 18px rgba(0,0,0,.35); transform: translateY(-1px); }
   .swatch[data-active="1"]{ border-color: var(--accent); box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 10px 26px rgba(0,0,0,.45); }
   .swatch[data-active="1"]::after{ content:"✓"; position:absolute; right:8px; bottom:6px; font-size:14px; opacity:.9; }
-  .settings-pop, .settings-pop * { color: inherit; }
-  :root[data-theme="dark"]  .swatch[data-theme="light"]{ display:none; }
-  :root[data-theme="light"] .swatch[data-theme="dark"] { display:none; }
-
-  @media (max-width:820px){
-    :root{ --chrome-h:124px }
-    .tab{ max-width:180px }
-    .bar{ flex-basis: 320px; }
-  }
 </style>
 
 <!-- Runtime/transport -->
@@ -204,16 +189,16 @@
 <script src="index.js" defer></script>
 
 <script>
+  /* Force WISP default over HTTPS */
   (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
 
-  const LS_KEY_COLLAPSE   = 'pt_chrome_collapsed';
-  const LS_KEY_THEME      = 'pt_theme';
-  const LS_KEY_GRAD_DARK  = 'pt_gradient_dark';
-  const LS_KEY_GRAD_LIGHT = 'pt_gradient_light';
+  /* === Storage keys (dark-only) === */
+  const LS_KEY_COLLAPSE = 'pt_chrome_collapsed';
+  const LS_KEY_GRAD     = 'pt_gradient_dark';   // single key now
 
+  /* === Favicon fallbacks (dark only) === */
   const DARK_FAV = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#222222"/><path d="M6 12h12M12 6v12" stroke="#bdbdbd" stroke-width="1.7" stroke-linecap="round"/></svg>');
-  const LIGHT_FAV= 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#f1f3f5" stroke="#d5d7db"/><path d="M6 12h12M12 6v12" stroke="#2b2b2b" stroke-width="1.7" stroke-linecap="round"/></svg>');
-  const DEF_FAV = () => (document.documentElement.dataset.theme==='light' ? LIGHT_FAV : DARK_FAV);
+  const DEF_FAV  = () => DARK_FAV;
 
   function proxAsset(u){ try { return location.origin + '/scramjet/' + encodeURIComponent(u); } catch { return u; } }
   function favCandidates(urlOrHost){
@@ -230,145 +215,80 @@
       `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(host)}`
     ].map(proxAsset);
   }
-  function loadFaviconInto(imgEl, candidates, themeFallback){
+  function loadFaviconInto(imgEl, candidates, fallback){
     if (!imgEl) return;
     imgEl.referrerPolicy='no-referrer'; imgEl.crossOrigin='anonymous';
-    const fallback = themeFallback || DEF_FAV();
+    const fb = fallback || DARK_FAV;
     const list = Array.from(new Set(candidates || []));
-    if (!list.length){ imgEl.src = fallback; return; }
+    if (!list.length){ imgEl.src = fb; return; }
     let i=0;
-    const next=()=>{ if (i>=list.length){ imgEl.src=fallback; return; }
+    const next=()=>{ if (i>=list.length){ imgEl.src=fb; return; }
       const src=list[i++]; imgEl.onerror=next; imgEl.onload=()=>{ imgEl.onerror=null; }; imgEl.src=src; };
     next();
   }
 
-  const THEMES = {
-    dark: { fg:'#e6e6e6', dim:'#bdbdbd', bg:'#0a0a0a', stroke:'#262626', accent:'#8a8a8a',
-      chromeBg:'linear-gradient(180deg, rgba(18,18,18,.82), rgba(12,12,12,.68))',
-      cardBg:'linear-gradient(180deg, rgba(22,22,22,.78), rgba(14,14,14,.72))',
-      barBg:'linear-gradient(180deg, rgba(24,24,24,.92), rgba(16,16,16,.9))',
-      btnBg:'linear-gradient(180deg, rgba(26,26,26,.95), rgba(18,18,18,.9))',
-      tabBg:'linear-gradient(180deg, rgba(28,28,28,.92), rgba(18,18,18,.88))',
-      tabBgAct:'linear-gradient(180deg, rgba(32,32,32,.96), rgba(20,20,20,.92))',
-      iframeBg:'#0b0b0b', rad1:'rgba(140,140,140,.10)', rad2:'rgba(160,160,160,.08)'
-    },
-    light: { fg:'#111', dim:'#444', bg:'#f5f6f8', stroke:'#d5d7db', accent:'#8a8a8a',
-      chromeBg:'linear-gradient(180deg, rgba(255,255,255,.82), rgba(248,248,248,.88))',
-      cardBg:'linear-gradient(180deg, rgba(255,255,255,.92), rgba(246,246,246,.90))',
-      barBg:'linear-gradient(180deg, rgba(255,255,255,.96), rgba(246,246,246,.94))',
-      btnBg:'linear-gradient(180deg, rgba(255,255,255,.96), rgba(244,244,244,.94))',
-      tabBg:'linear-gradient(180deg, rgba(255,255,255,.95), rgba(245,245,245,.92))',
-      tabBgAct:'linear-gradient(180deg, rgba(255,255,255,.98), rgba(238,238,238,.96))',
-      iframeBg:'#ffffff', rad1:'rgba(0,0,0,.06)', rad2:'rgba(0,0,0,.04)'
-    }
-  };
+  /* === Dark gradients (12) === */
   const GRADS = {
-    graphite:{ theme:'dark',  sw:['#0a0a0a','#0d0d0d','#121212'] },
-    abyss:   { theme:'dark',  sw:['#0a0f1a','#0b1320','#0c1726'] },
-    violet:  { theme:'dark',  sw:['#120a1a','#1a0f2b','#23143a'] },
-    teal:    { theme:'dark',  sw:['#071a1a','#0a2222','#0d2a2a'] },
-    slate:   { theme:'dark',  sw:['#0c0d10','#101218','#141820'] },
-    obsidian:{ theme:'dark',  sw:['#0b0c0e','#101318','#171b22'] },
-    paper:   { theme:'light', sw:['#f6f7f9','#eef0f4','#e7eaf0'] },
-    linen:   { theme:'light', sw:['#faf7f2','#f2eadf','#e7dcc9'] },
-    dawn:    { theme:'light', sw:['#fdf3f0','#f9e7e2','#f0d9d2'] },
-    sky:     { theme:'light', sw:['#f3f8ff','#e7f1ff','#dceaff'] },
-    mint:    { theme:'light', sw:['#f2fbf6','#e5f6ee','#d7efe5'] },
-    pearl:   { theme:'light', sw:['#ffffff','#f6f7fb','#eceff6'] }
+    graphite:{ sw:['#0a0a0a','#0d0d0d','#121212'] },
+    abyss:   { sw:['#0a0f1a','#0b1320','#0c1726'] },
+    violet:  { sw:['#120a1a','#1a0f2b','#23143a'] },
+    teal:    { sw:['#071a1a','#0a2222','#0d2a2a'] },
+    slate:   { sw:['#0c0d10','#101218','#141820'] },
+    obsidian:{ sw:['#0b0c0e','#101318','#171b22'] },
+    onyx:    { sw:['#0a0a0b','#0e0f11','#141518'] },
+    nebula:  { sw:['#0b0b14','#121430','#1a1d47'] },
+    cyber:   { sw:['#0a1014','#0b1620','#0d1e2b'] },
+    oil:     { sw:['#0a0a0a','#13100d','#1b1612'] },
+    night:   { sw:['#080a12','#0b0f1a','#0f1524'] },
+    carbon:  { sw:['#0a0a0b','#111213','#191b1d'] }
   };
-  function buildBodyBackground(themeName){
-    const t = THEMES[themeName] || THEMES.dark;
-    const g1 = getComputedStyle(document.documentElement).getPropertyValue('--grad-1').trim() || '#0a0a0a';
-    const g2 = getComputedStyle(document.documentElement).getPropertyValue('--grad-2').trim() || '#0d0d0d';
-    const g3 = getComputedStyle(document.documentElement).getPropertyValue('--grad-3').trim() || '#121212';
-    return [
-      `radial-gradient(1100px 520px at 80% -10%, ${t.rad1} 0%, rgba(0,0,0,0) 60%)`,
-      `radial-gradient(900px 480px at -10% 110%, ${t.rad2} 0%, rgba(0,0,0,0) 60%)`,
-      `linear-gradient(180deg, ${g1} 0%, ${g2} 55%, ${g3} 100%)`
-    ].join(', ');
-  }
-  function gradientBelongsToTheme(gradName, theme){ const g = GRADS[gradName]; return !!g && g.theme === theme; }
-  function defaultGradFor(theme){ return theme === 'light' ? 'paper' : 'graphite'; }
   function setGradientVars(name){
-    const g = GRADS[name] || GRADS[defaultGradFor('dark')];
+    const g = GRADS[name] || GRADS.graphite;
     document.documentElement.style.setProperty('--grad-1', g.sw[0]);
     document.documentElement.style.setProperty('--grad-2', g.sw[1]);
     document.documentElement.style.setProperty('--grad-3', g.sw[2]);
   }
-
-  function repaintSettings(themeName){
-    const t = THEMES[themeName] || THEMES.dark;
-    const pop = document.getElementById('settings-pop'); if (!pop) return;
-    pop.style.background  = t.cardBg; pop.style.borderColor = t.stroke; pop.style.color = t.fg;
-    pop.querySelectorAll('.chip').forEach(el=>{ el.style.background=t.btnBg; el.style.borderColor=t.stroke; el.style.color=t.fg; });
-    pop.querySelectorAll('.swatch').forEach(el=>{ el.style.borderColor=getComputedStyle(document.documentElement).getPropertyValue('--stroke').trim() || '#262626'; });
+  function buildBodyBackground(){
+    const g1 = getComputedStyle(document.documentElement).getPropertyValue('--grad-1').trim() || '#0a0a0a';
+    const g2 = getComputedStyle(document.documentElement).getPropertyValue('--grad-2').trim() || '#0d0d0d';
+    const g3 = getComputedStyle(document.documentElement).getPropertyValue('--grad-3').trim() || '#121212';
+    return [
+      `radial-gradient(1100px 520px at 80% -10%, rgba(140,140,140,.10) 0%, rgba(0,0,0,0) 60%)`,
+      `radial-gradient(900px 480px at -10% 110%, rgba(160,160,160,.08) 0%, rgba(0,0,0,0) 60%)`,
+      `linear-gradient(180deg, ${g1} 0%, ${g2} 55%, ${g3} 100%)`
+    ].join(', ');
   }
-  function repaintTabsForTheme(){
-    const theme = localStorage.getItem(LS_KEY_THEME) || 'dark';
-    const t = THEMES[theme] || THEMES.dark;
-    document.querySelectorAll('.tab, .tab-add').forEach(n=>{
-      n.style.setProperty('background', n.classList.contains('active') ? t.tabBgAct : t.tabBg);
-    });
-  }
+  function applyDarkTheme(){
+    // Colors are already dark; just repaint dependent surfaces.
+    document.body.style.color = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
+    document.body.style.background = buildBodyBackground();
+    document.querySelector('.chrome')?.style.setProperty('background','linear-gradient(180deg, rgba(18,18,18,.82), rgba(12,12,12,.68))');
+    document.querySelectorAll('.hero').forEach(n=>n.style.setProperty('background','linear-gradient(180deg, rgba(22,22,22,.78), rgba(14,14,14,.72))'));
+    document.querySelectorAll('.bar').forEach(n=>n.style.setProperty('background','linear-gradient(180deg, rgba(24,24,24,.92), rgba(16,16,16,.9))'));
+    document.querySelectorAll('.btn').forEach(n=>n.style.setProperty('background','linear-gradient(180deg, rgba(26,26,26,.95), rgba(18,18,18,.9))'));
+    document.querySelectorAll('.tab').forEach(n=>n.style.setProperty('background','linear-gradient(180deg, rgba(28,28,28,.92), rgba(18,18,18,.88))'));
+    document.querySelectorAll('.tab.active').forEach(n=>n.style.setProperty('background','linear-gradient(180deg, rgba(32,32,32,.96), rgba(20,20,20,.92))'));
+    document.getElementById('sj-frame')?.style.setProperty('background','#0b0b0b');
 
-  /* UPDATE: also refresh default icons for tabs & suggestions */
-  function applyThemeIcons(themeName){
-    const defFav = (themeName === 'light') ? LIGHT_FAV : DARK_FAV;
-
-    // Header + tabs
-    const headerFav = document.getElementById('site-favicon');
-    if (headerFav && (!headerFav.src || headerFav.src === DARK_FAV || headerFav.src === LIGHT_FAV)) {
-      headerFav.src = defFav;
-    }
-    document.querySelectorAll('.tab .fav').forEach(img=>{
-      if (!img.getAttribute('data-has-real') && (!img.src || img.src===DARK_FAV || img.src===LIGHT_FAV)) {
-        img.src = defFav;
-      }
-    });
-
-    // Suggestions: swap default icons for items WITHOUT a host icon
-    document.querySelectorAll('#omnibox-suggestions li').forEach(li=>{
-      if (li.dataset.hasHostIcon !== '1') {
-        const img = li.querySelector('img.fav');
-        if (img) img.src = defFav;
-      }
-    });
-  }
-
-  function applyTheme(name){
-    const t = THEMES[name] || THEMES.dark;
-    document.documentElement.dataset.theme = name;
-    const stored = (name==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(name);
-    const useGrad = gradientBelongsToTheme(stored, name) ? stored : defaultGradFor(name);
-    setGradientVars(useGrad);
-
-    const root = document.documentElement.style;
-    root.setProperty('--fg', t.fg); root.setProperty('--fg-dim', t.dim); root.setProperty('--bg', t.bg);
-    root.setProperty('--stroke', t.stroke); root.setProperty('--accent', t.accent);
-    document.body.style.color = t.fg; document.body.style.background = buildBodyBackground(name);
-    document.querySelector('.chrome')?.style.setProperty('background', t.chromeBg);
-    document.querySelectorAll('.hero').forEach(n=>n.style.setProperty('background', t.cardBg));
-    document.querySelectorAll('.bar').forEach(n=>n.style.setProperty('background', t.barBg));
-    document.querySelectorAll('.btn').forEach(n=>n.style.setProperty('background', t.btnBg));
-    document.querySelectorAll('.tab, .tab-add').forEach(n=>n.style.setProperty('background', n.classList.contains('active') ? t.tabBgAct : t.tabBg));
-    document.getElementById('sj-frame')?.style.setProperty('background', t.iframeBg);
-
-    repaintSettings(name); localStorage.setItem(LS_KEY_THEME, name);
-    repaintTabsForTheme(); applyThemeIcons(name);
-
-    /* Force address input to repaint its text/caret colors on theme switch */
+    // Force address repaint
     const addrEl = document.getElementById('sj-address');
     if (addrEl) {
       const fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
       addrEl.style.webkitTextFillColor = fg;
       addrEl.style.caretColor = fg;
     }
-    /* If suggestions are open, rebuild to refresh icons & text colors */
-    const suggOpen = document.getElementById('omnibox-suggestions');
-    if (suggOpen && suggOpen.style.display !== 'none') {
-      const q = document.getElementById('sj-address')?.value || '';
-      if (typeof refresh === 'function') refresh(q);
-    }
+
+    // Default icons (tabs/header/suggestions) stay dark
+    const headerFav = document.getElementById('site-favicon');
+    if (headerFav && (!headerFav.src || headerFav.src === DARK_FAV)) headerFav.src = DARK_FAV;
+    document.querySelectorAll('.tab .fav').forEach(img=>{
+      if (!img.getAttribute('data-has-real') && (!img.src || img.src===DARK_FAV)) img.src = DARK_FAV;
+    });
+    document.querySelectorAll('#omnibox-suggestions li').forEach(li=>{
+      if (li.dataset.hasHostIcon !== '1') {
+        const img = li.querySelector('img.fav'); if (img) img.src = DARK_FAV;
+      }
+    });
   }
 
   function measureChrome(){
@@ -407,11 +327,12 @@
   addEventListener('resize',measureChrome);
 
   addEventListener('DOMContentLoaded',()=>{
-    const theme = localStorage.getItem(LS_KEY_THEME) || 'dark';
-    if (!localStorage.getItem(LS_KEY_GRAD_DARK))  localStorage.setItem(LS_KEY_GRAD_DARK,  'graphite');
-    if (!localStorage.getItem(LS_KEY_GRAD_LIGHT)) localStorage.setItem(LS_KEY_GRAD_LIGHT, 'paper');
-    applyTheme(theme);
+    // Init dark gradient
+    if (!localStorage.getItem(LS_KEY_GRAD)) localStorage.setItem(LS_KEY_GRAD,'graphite');
+    setGradientVars(localStorage.getItem(LS_KEY_GRAD));
+    applyDarkTheme();
 
+    // Restore collapse
     setCollapsed(localStorage.getItem(LS_KEY_COLLAPSE) === '1');
 
     const tabsWrap   = document.getElementById('tabs');
@@ -428,7 +349,7 @@
     const toggleBtn  = document.getElementById('chrome-toggle');
     const fabBtn     = document.getElementById('chrome-fab');
 
-    if (headerFav) headerFav.src = DEF_FAV();
+    if (headerFav) headerFav.src = DARK_FAV;
 
     let tabs=[]; let active=-1; let nextId=1; let inspectorOn=false;
     let userEditing=false;
@@ -464,7 +385,7 @@
       const id=nextId++;
       const el=document.createElement('div');
       el.className='tab'; el.dataset.id=id;
-      el.innerHTML=`<img class="fav" alt="" src="${DEF_FAV()}" referrerpolicy="no-referrer" crossorigin="anonymous"/>
+      el.innerHTML=`<img class="fav" alt="" src="${DARK_FAV}" referrerpolicy="no-referrer" crossorigin="anonymous"/>
                     <span class="label">New Tab</span>
                     <span class="close" title="Close" aria-label="Close">×</span>`;
       tabsWrap.insertBefore(el, addBtn);
@@ -508,7 +429,6 @@
       if (idx===active || idx<0 || idx>=tabs.length) return;
       if (active>=0) tabs[active].el.classList.remove('active');
       active=idx; tabs[active].el.classList.add('active');
-      repaintTabsForTheme();
       const url=tabs[active].url||'';
       if (url) { go(url); }
       else { clearAddressBar(); frame.removeAttribute('src'); frame.style.display='none'; home.style.display='block'; }
@@ -526,7 +446,7 @@
     function applyFavicon(candidates){
       const headerFav = document.getElementById('site-favicon');
       const tabImg    = tabs[active]?.el.querySelector('.fav');
-      const def       = DEF_FAV();
+      const def       = DARK_FAV;
 
       const list = [];
       try {
@@ -549,6 +469,24 @@
       }
     }
 
+    function extractDocIconsAndTitle(){
+      let outIcons=[], titleTxt='';
+      try {
+        const d = frame.contentDocument; if (!d) return {icons:outIcons,title:titleTxt};
+        titleTxt = (d.title||'').trim();
+        const base=d.baseURI||d.URL||'';
+        const linkEls=[...d.querySelectorAll('link[rel*="icon" i], link[rel="apple-touch-icon" i], link[rel="shortcut icon" i]')];
+        linkEls.sort((a,b)=>{
+          const sa = parseInt((a.getAttribute('sizes')||'').match(/\d+/)?.[0]||'0',10);
+          const sb = parseInt((b.getAttribute('sizes')||'').match(/\d+/)?.[0]||'0',10);
+          return sb-sa;
+        });
+        for(const el of linkEls){ const href=el.getAttribute('href'); if (!href) continue; try{ outIcons.push(new URL(href, base).href); }catch{} }
+        try{ const o=new URL(base).origin; outIcons.push(o+'/favicon.ico', o+'/favicon.png', o+'/apple-touch-icon.png'); }catch{}
+      } catch {}
+      return {icons:[...new Set(outIcons)], title:titleTxt};
+    }
+
     function updateTabMetaFromFrame(){
       if (active<0) return;
       let rawTarget = null; try { rawTarget = frame.contentWindow.location.href; } catch {}
@@ -557,26 +495,12 @@
       if (target) { tabs[active].url = target; setAddressBar(target); }
 
       let didDoc=false;
-      try {
-        const d = frame.contentDocument;
-        if (d) {
-          didDoc=true;
-          const t = (d.title||'').trim() || new URL(d.URL).hostname.replace(/^www\./,'');
-          tabs[active].el.querySelector('.label').textContent = t;
-
-          const out=[]; const base=d.baseURI||d.URL||'';
-          const linkEls=[...d.querySelectorAll('link[rel*="icon" i], link[rel="apple-touch-icon" i], link[rel="shortcut icon" i]')];
-          linkEls.sort((a,b)=>{
-            const sa = parseInt((a.getAttribute('sizes')||'').match(/\d+/)?.[0]||'0',10);
-            const sb = parseInt((b.getAttribute('sizes')||'').match(/\d+/)?.[0]||'0',10);
-            return sb-sa;
-          });
-          for(const el of linkEls){ const href=el.getAttribute('href'); if (!href) continue; try{ out.push(new URL(href, base).href); }catch{} }
-          try{ const o=new URL(base).origin; out.push(o+'/favicon.ico', o+'/favicon.png', o+'/apple-touch-icon.png'); }catch{}
-          applyFavicon([...new Set(out)]);
-        }
-      } catch {}
-
+      const got = extractDocIconsAndTitle();
+      if (got.title) {
+        didDoc=true;
+        tabs[active].el.querySelector('.label').textContent = got.title;
+        applyFavicon(got.icons);
+      }
       if (!didDoc && target){
         try {
           const u=new URL(target);
@@ -588,19 +512,17 @@
     frame.addEventListener('load', ()=>setTimeout(updateTabMetaFromFrame, 150));
     setInterval(updateTabMetaFromFrame, 900);
 
-    /* Inspector stub (kept) */
-    function disableInspector(){ try{ const w = frame.contentWindow; const d = w.document; d.querySelector('#__mini_inspector_overlay__')?.remove(); d.querySelector('#__mini_inspector_panel__')?.remove(); d.removeEventListener('mousemove', w.__mini_inspector_move, true); d.removeEventListener('click', w.__mini_inspector_click, true); d.removeEventListener('keydown', w.__mini_inspector_key, true); w.__mini_inspector_move = w.__mini_inspector_click = w.__mini_inspector_key = null; }catch(_){} inspectorOn=false; document.getElementById('inspect')?.classList.remove('toggled'); }
-    function enableInspector(){ try { void frame.contentDocument; } catch { disableInspector(); return; } /* your inspector code here if needed */ }
+    /* Inspector stub (kept minimal) */
+    function disableInspector(){ inspectorOn=false; document.getElementById('inspect')?.classList.remove('toggled'); }
+    function enableInspector(){ try { void frame.contentDocument; } catch { disableInspector(); return; } /* plug your overlay if you want */ }
     inspectBtn.addEventListener('click', ()=>{ if (inspectorOn){ try { frame.contentWindow.postMessage({__mini_inspector_cmd:'off'}, '*'); } catch(_){} disableInspector(); } else { enableInspector(); } });
 
-    /* Settings pop */
+    /* Settings pop (dark-only gradients) */
     function openSettingsAtButton(btn){
-      const curTheme = document.documentElement.dataset.theme || 'dark';
-      const curGrad  = (curTheme==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || (curTheme==='light'?'paper':'graphite');
-      document.querySelectorAll('.chip[data-group="theme"]').forEach(el=>{ el.dataset.active = (el.dataset.value===curTheme?'1':'0'); });
+      const curGrad = localStorage.getItem(LS_KEY_GRAD) || 'graphite';
       document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el.dataset.value===curGrad?'1':'0'); });
       const r = btn.getBoundingClientRect(); const margin = 8;
-      settingsPop.style.display = 'block'; const popW = settingsPop.offsetWidth || 360; settingsPop.style.display = 'none';
+      settingsPop.style.display = 'block'; const popW = settingsPop.offsetWidth || 420; settingsPop.style.display = 'none';
       const left = Math.max(10, Math.min(window.innerWidth - popW - 10, r.left + r.width - popW));
       settingsPop.style.left = left + 'px'; settingsPop.style.top  = (r.bottom + margin) + 'px'; settingsPop.style.display = 'block';
       const onDocClick = (e)=>{ if (!settingsPop.contains(e.target) && e.target !== btn) { settingsPop.style.display='none'; document.removeEventListener('mousedown', onDocClick, true); document.removeEventListener('keydown', onEsc, true); } };
@@ -608,22 +530,12 @@
       setTimeout(()=>{ document.addEventListener('mousedown', onDocClick, true); document.addEventListener('keydown', onEsc, true); },0);
     }
     settingsBtn.addEventListener('click', ()=> openSettingsAtButton(settingsBtn));
-    document.querySelectorAll('.chip[data-group="theme"]').forEach(ch=>{
-      ch.addEventListener('click', ()=>{
-        const val = ch.dataset.value; applyTheme(val);
-        document.querySelectorAll('.chip[data-group="theme"]').forEach(el=>{ el.dataset.active = (el===ch?'1':'0'); });
-        const th = document.documentElement.dataset.theme || 'dark';
-        const cur= (th==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || (th==='light'?'paper':'graphite');
-        document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el.dataset.value===cur?'1':'0'); });
-      });
-    });
     document.querySelectorAll('.swatch').forEach(sw=>{
       sw.addEventListener('click', ()=>{
-        const th = document.documentElement.dataset.theme || 'dark';
-        const val = sw.dataset.value; if (!GRADS[val] || GRADS[val].theme !== th) return;
+        const val = sw.dataset.value; if (!GRADS[val]) return;
         setGradientVars(val);
-        localStorage.setItem(th==='light' ? LS_KEY_GRAD_LIGHT : LS_KEY_GRAD_DARK, val);
-        document.body.style.background = buildBodyBackground(th);
+        localStorage.setItem(LS_KEY_GRAD, val);
+        document.body.style.background = buildBodyBackground();
         document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el===sw?'1':'0'); });
       });
     });
@@ -754,13 +666,13 @@
         img.referrerPolicy='no-referrer'; img.crossOrigin='anonymous';
 
         if (it.hostForIcon){
-          loadFaviconInto(img, favCandidates(it.hostForIcon), DEF_FAV());
+          loadFaviconInto(img, favCandidates(it.hostForIcon), DARK_FAV);
           li.dataset.hasHostIcon = "1";
         } else if (it.iconUrl){
-          loadFaviconInto(img, [proxAsset(it.iconUrl)], DEF_FAV());
+          loadFaviconInto(img, [proxAsset(it.iconUrl)], DARK_FAV);
           li.dataset.hasHostIcon = "1";
         } else {
-          img.src = DEF_FAV();
+          img.src = DARK_FAV;
           li.dataset.hasHostIcon = "0";
         }
 
@@ -804,7 +716,6 @@
         if (q === lastQ) render(merged);
       }, 120);
     }
-    window.refresh = refresh; // used by theme switch repaint
 
     addr.addEventListener('input', ()=>{ refresh(addr.value||''); });
     addr.addEventListener('focus', ()=>{ refresh(addr.value||''); });
@@ -849,7 +760,7 @@
     </div>
   </div>
 
-  <!-- Expand FAB (shows only when collapsed) -->
+  <!-- Expand FAB (when collapsed) -->
   <button id="chrome-fab" class="btn icon fab" title="Expand" aria-label="Expand">+</button>
 
   <!-- Home -->
@@ -873,32 +784,23 @@
   <p id="sj-error"></p>
   <pre id="sj-error-code"></pre>
 
-  <!-- Settings -->
+  <!-- Settings: dark-only gradients (12) -->
   <div id="settings-pop" class="settings-pop" role="dialog" aria-modal="false" aria-labelledby="settings-title">
     <div class="settings-group">
-      <h4 id="settings-title">Theme</h4>
+      <h4 id="settings-title">Gradient</h4>
       <div class="settings-row">
-        <button class="chip" data-group="theme" data-value="dark">Dark</button>
-        <button class="chip" data-group="theme" data-value="light">Light</button>
-      </div>
-    </div>
-    <div class="settings-group">
-      <h4>Gradient</h4>
-      <div class="settings-row">
-        <!-- Dark (6) -->
-        <div class="swatch" data-theme="dark" data-value="graphite" style="background:linear-gradient(180deg,#0a0a0a,#0d0d0d 55%,#121212)"></div>
-        <div class="swatch" data-theme="dark" data-value="abyss"    style="background:linear-gradient(180deg,#0a0f1a,#0b1320 55%,#0c1726)"></div>
-        <div class="swatch" data-theme="dark" data-value="violet"   style="background:linear-gradient(180deg,#120a1a,#1a0f2b 55%,#23143a)"></div>
-        <div class="swatch" data-theme="dark" data-value="teal"     style="background:linear-gradient(180deg,#071a1a,#0a2222 55%,#0d2a2a)"></div>
-        <div class="swatch" data-theme="dark" data-value="slate"    style="background:linear-gradient(180deg,#0c0d10,#101218 55%,#141820)"></div>
-        <div class="swatch" data-theme="dark" data-value="obsidian" style="background:linear-gradient(180deg,#0b0c0e,#101318 55%,#171b22)"></div>
-        <!-- Light (6) -->
-        <div class="swatch" data-theme="light" data-value="paper"   style="background:linear-gradient(180deg,#f6f7f9,#eef0f4 55%,#e7eaf0)"></div>
-        <div class="swatch" data-theme="light" data-value="linen"   style="background:linear-gradient(180deg,#faf7f2,#f2eadf 55%,#e7dcc9)"></div>
-        <div class="swatch" data-theme="light" data-value="dawn"    style="background:linear-gradient(180deg,#fdf3f0,#f9e7e2 55%,#f0d9d2)"></div>
-        <div class="swatch" data-theme="light" data-value="sky"     style="background:linear-gradient(180deg,#f3f8ff,#e7f1ff 55%,#dceaff)"></div>
-        <div class="swatch" data-theme="light" data-value="mint"    style="background:linear-gradient(180deg,#f2fbf6,#e5f6ee 55%,#d7efe5)"></div>
-        <div class="swatch" data-theme="light" data-value="pearl"   style="background:linear-gradient(180deg,#ffffff,#f6f7fb 55%,#eceff6)"></div>
+        <div class="swatch" data-value="graphite" style="background:linear-gradient(180deg,#0a0a0a,#0d0d0d 55%,#121212)"></div>
+        <div class="swatch" data-value="abyss"    style="background:linear-gradient(180deg,#0a0f1a,#0b1320 55%,#0c1726)"></div>
+        <div class="swatch" data-value="violet"   style="background:linear-gradient(180deg,#120a1a,#1a0f2b 55%,#23143a)"></div>
+        <div class="swatch" data-value="teal"     style="background:linear-gradient(180deg,#071a1a,#0a2222 55%,#0d2a2a)"></div>
+        <div class="swatch" data-value="slate"    style="background:linear-gradient(180deg,#0c0d10,#101218 55%,#141820)"></div>
+        <div class="swatch" data-value="obsidian" style="background:linear-gradient(180deg,#0b0c0e,#101318 55%,#171b22)"></div>
+        <div class="swatch" data-value="onyx"     style="background:linear-gradient(180deg,#0a0a0b,#0e0f11 55%,#141518)"></div>
+        <div class="swatch" data-value="nebula"   style="background:linear-gradient(180deg,#0b0b14,#121430 55%,#1a1d47)"></div>
+        <div class="swatch" data-value="cyber"    style="background:linear-gradient(180deg,#0a1014,#0b1620 55%,#0d1e2b)"></div>
+        <div class="swatch" data-value="oil"      style="background:linear-gradient(180deg,#0a0a0a,#13100d 55%,#1b1612)"></div>
+        <div class="swatch" data-value="night"    style="background:linear-gradient(180deg,#080a12,#0b0f1a 55%,#0f1524)"></div>
+        <div class="swatch" data-value="carbon"   style="background:linear-gradient(180deg,#0a0a0b,#111213 55%,#191b1d)"></div>
       </div>
     </div>
   </div>
