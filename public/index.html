@@ -1,247 +1,249 @@
 <!doctype html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>PROJECT TRINITY</title>
-    <link rel="shortcut icon" content="favicon.webp" />
-    <style>
-      :root { --fg:#fff; --bg:#000; --chrome-h:56px; } /* thinner header */
-      * { box-sizing: border-box; }
-      html,body { height:100%; }
-      body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.45 "Courier New", ui-monospace, monospace; }
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PROJECT TRINITY</title>
+<link rel="shortcut icon" content="favicon.webp" />
 
-      /* ===== Fixed header (tabs + address) — thinner ===== */
-      .chrome {
-        position:fixed; top:0; left:0; right:0; z-index:10000;
-        background:#000; border-bottom:1px solid #fff;
-      }
-      .top { max-width:980px; margin:0 auto; padding:6px 10px 8px; }
+<style>
+  :root{ --fg:#fff; --bg:#000; --chrome-h:48px; }
+  *{ box-sizing:border-box }
+  html,body{ height:100% }
+  body{ margin:0; background:var(--bg); color:var(--fg); font:14px/1.35 "Courier New",ui-monospace,monospace }
 
-      /* Tabs */
-      .tabs { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
-      .tab {
-        display:flex; align-items:center; gap:6px;
-        padding:4px 8px; border:1px solid transparent; border-radius:4px;
-        cursor:pointer; white-space:nowrap; max-width:210px; font-size:14px;
-      }
-      .tab span.label { overflow:hidden; text-overflow:ellipsis; }
-      .tab.active { border-color:#fff; background:#000; }
-      .tab .close { cursor:pointer; opacity:.9; }
-      .tab-add {
-        margin-left:auto; border:1px solid #fff; border-radius:4px;
-        padding:4px 9px; background:#000; color:#fff; cursor:pointer; font-size:14px;
-      }
-      .tab-add:hover { background:#111; }
+  /* ====== CHROME BAR (edge-to-edge, compact, connected) ====== */
+  .chrome{
+    position:fixed; inset:0 0 auto 0; height:var(--chrome-h); z-index:10000;
+    background:#000; border-bottom:1px solid #fff;
+    display:flex; align-items:center; gap:10px; padding:6px 8px;
+  }
 
-      /* Address bar (keep Scramjet IDs) */
-      .bar {
-        display:flex; align-items:center;
-        border:1px solid #fff; border-radius:6px;
-        padding:8px 10px; margin:0;
-      }
-      #sj-address{ all:unset; color:#fff; width:100%; font:15px/1.3 "Courier New", ui-monospace, monospace; }
-      #sj-address::placeholder{ color:#bfbfbf; }
-      .bar:focus-within{ outline:2px solid #fff; outline-offset:2px; }
+  /* Tabs area (scrollable like Chrome) */
+  .tabs-wrap{
+    flex:1 1 auto; min-width:220px; display:flex; align-items:center; gap:6px;
+    overflow-x:auto; scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  .tabs-wrap::-webkit-scrollbar{ display:none }
 
-      /* ===== Home page (shows when no URL is loaded) ===== */
-      .home {
-        max-width:980px; margin:calc(var(--chrome-h) + 24px) auto 16vh; padding:0 18px;
-      }
-      .home .title { margin:0 0 8px; font-size:32px; font-weight:700; }
-      .home .subtitle { margin:0 0 16px; color:#ddd; font-size:12px; }
-      .home .tips { margin-top:14px; color:#ccc; font-size:12px; }
-      .links{
-        margin-top:16px; display:flex; gap:10px; align-items:center; font-size:12px;
-      }
-      .links a{ color:#fff; text-decoration:none; border-bottom:1px solid transparent; }
-      .links a:hover{ border-bottom-color:#fff; }
+  .tab{
+    display:flex; align-items:center; gap:6px;
+    padding:4px 10px;
+    border:1px solid #444; border-bottom-color:#fff;  /* visual merge to bar */
+    border-radius:10px 10px 0 0;                      /* little curve like Chrome */
+    background:#000;
+    cursor:pointer; user-select:none; white-space:nowrap; max-width:220px;
+    transform:translateY(1px);                        /* sits “into” the bar */
+  }
+  .tab span.label{ overflow:hidden; text-overflow:ellipsis }
+  .tab.active{
+    border-color:#fff; border-bottom-color:#000;      /* active tab “connected” to bar */
+    background:#000;
+  }
+  .tab .close{ cursor:pointer; opacity:.9 }
 
-      /* Hooks hidden visually but present */
-      #sj-error, #sj-error-code { display:none; }
+  .tab-add{
+    flex:0 0 auto;
+    border:1px solid #fff; border-radius:50%;
+    width:26px; height:26px; line-height:24px; text-align:center;
+    background:#000; color:#fff; cursor:pointer; font-size:16px;
+  }
+  .tab-add:hover{ background:#111 }
 
-      /* ===== Single results surface below header ===== */
-      #sj-frame{
-        border:none; position:fixed; left:0; right:0;
-        top:var(--chrome-h); height:calc(100vh - var(--chrome-h));
-        width:100vw; background:#000; z-index:9999; display:none; /* runtime may also toggle */
-      }
+  /* Omnibox (address) — connected pill on the right */
+  .omnibox{
+    flex:0 0 42vw; max-width:640px; min-width:260px;
+    border:1px solid #fff; border-radius:16px; padding:6px 10px;
+    display:flex; align-items:center;
+  }
+  #sj-address{
+    all:unset; color:#fff; width:100%;
+    font:14px/1.3 "Courier New",ui-monospace,monospace;
+  }
+  #sj-address::placeholder{ color:#bfbfbf }
+  .omnibox:focus-within{ outline:2px solid #fff; outline-offset:2px }
 
-      @media (max-width:640px){
-        .tab{ max-width:150px; font-size:13px; }
-        .home .title{ font-size:26px; }
-      }
-    </style>
+  /* ====== HOME (shows when active tab has no URL) ====== */
+  .home{
+    padding:24px 18px; max-width:980px; margin:calc(var(--chrome-h) + 20px) auto 16vh;
+  }
+  .home .title{ margin:0 0 8px; font-size:28px; font-weight:700; }
+  .home .subtitle{ margin:0 0 14px; color:#ddd; font-size:12px }
+  .links{ margin-top:12px; display:flex; gap:10px; align-items:center; font-size:12px }
+  .links a{ color:#fff; text-decoration:none; border-bottom:1px solid transparent }
+  .links a:hover{ border-bottom-color:#fff }
 
-    <!-- If your build serves these at root, keep slashes; otherwise make them relative -->
-    <script src="/scram/scramjet.all.js"></script>
-    <script src="/baremux/index.js" defer></script>
-    <script src="/epoxy/index.js" defer></script>
+  /* Hooks hidden visually but present */
+  #sj-error,#sj-error-code{ display:none }
 
-    <!-- Wisp client (safe if unused) -->
-    <script src="https://unpkg.com/wisp-js/dist/wisp.min.js" defer></script>
+  /* ====== SINGLE RESULTS SURFACE sized under the chrome ====== */
+  #sj-frame{
+    border:none; position:fixed; left:0; right:0;
+    top:var(--chrome-h); height:calc(100vh - var(--chrome-h));
+    width:100vw; background:#000; z-index:9999; display:none; /* runtime may also toggle */
+  }
 
-    <script src="register-sw.js" defer></script>
-    <script src="search.js" defer></script>
-    <script src="index.js" defer></script>
+  @media (max-width:720px){
+    :root{ --chrome-h:86px } /* two-row collapse on small screens */
+    .chrome{ flex-wrap:wrap; align-content:flex-start; gap:6px 8px; padding:6px 8px 8px }
+    .tabs-wrap{ order:1; width:100% }
+    .omnibox{ order:2; flex:1 0 100% }
+  }
+</style>
 
-    <script>
-      /* Default WISP_URL if you didn't set it and you're on HTTPS */
-      (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
+<!-- If you actually serve these at root, keep slashes; otherwise make them relative -->
+<script src="/scram/scramjet.all.js"></script>
+<script src="/baremux/index.js" defer></script>
+<script src="/epoxy/index.js" defer></script>
 
-      /* Recompute header height → push iframe under it (in case tabs wrap) */
-      function measureChrome() {
-        const el = document.querySelector('.chrome');
-        if (!el) return;
-        const h = Math.ceil(el.getBoundingClientRect().height) + 'px';
-        document.documentElement.style.setProperty('--chrome-h', h);
-      }
-      window.addEventListener('resize', measureChrome);
-      window.addEventListener('DOMContentLoaded', measureChrome);
+<!-- Wisp client (safe if unused) -->
+<script src="https://unpkg.com/wisp-js/dist/wisp.min.js" defer></script>
 
-      /* Normalize to https/search before your handler runs */
-      function normalizeInput(q){
-        q=(q||'').trim();
-        if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) return 'https://www.google.com/search?q='+encodeURIComponent(q);
-        if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) &&  q.includes('.')) return 'https://'+q;
-        return q.replace(/^http:\/\//i,'https://');
-      }
-      function labelFrom(v){
-        try{const u=new URL(v);return u.hostname.replace(/^www\./,'');}
-        catch{return (v?.startsWith('https://www.google.com/search?q='))?'Search':(v?.length>24?v.slice(0,24)+'…':(v||'New Tab'));}
-      }
+<script src="register-sw.js" defer></script>
+<script src="search.js" defer></script>
+<script src="index.js" defer></script>
 
-      /* Tabs with a single iframe: store URLs per tab, swap iframe.src on switch.
-         When no URL is set for the active tab, show the Home page. */
-      window.addEventListener('DOMContentLoaded', () => {
-        const tabsEl = document.getElementById('tabs');
-        const addEl  = document.getElementById('tab-add');
-        const form   = document.getElementById('sj-form');
-        const addr   = document.getElementById('sj-address');
-        const frame  = document.getElementById('sj-frame');
-        const home   = document.getElementById('home');
+<script>
+  /* Default WISP_URL if you didn't set it and you're on HTTPS */
+  (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
 
-        let tabs = [];        // { id, el, url }
-        let active = -1;
-        let nextId = 1;
+  /* Measure header (in case it wraps on small screens) */
+  function measureChrome(){
+    const el=document.querySelector('.chrome'); if(!el) return;
+    const h=Math.ceil(el.getBoundingClientRect().height)+'px';
+    document.documentElement.style.setProperty('--chrome-h',h);
+  }
+  addEventListener('resize',measureChrome);
+  addEventListener('DOMContentLoaded',measureChrome);
 
-        function updateHomeVisibility() {
-          const showing = !tabs.length || !tabs[active]?.url;
-          home.style.display = showing ? 'block' : 'none';
-          // If no URL, hide iframe; else let runtime show it (we also set display here for UX)
-          if (showing) { frame.removeAttribute('src'); frame.style.display='none'; }
-          measureChrome();
-        }
+  /* Normalize to https/search before your handler runs */
+  function normalizeInput(q){
+    q=(q||'').trim();
+    if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) return 'https://www.google.com/search?q='+encodeURIComponent(q);
+    if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) &&  q.includes('.')) return 'https://'+q;
+    return q.replace(/^http:\/\//i,'https://');
+  }
+  function labelFrom(v){
+    try{const u=new URL(v);return u.hostname.replace(/^www\./,'');}
+    catch{return (v?.startsWith('https://www.google.com/search?q='))?'Search':(v?.length>24?v.slice(0,24)+'…':(v||'New Tab'));}
+  }
 
-        function setActive(idx){
-          if (idx===active || idx<0 || idx>=tabs.length) return;
-          if (active>=0) tabs[active].el.classList.remove('active');
-          active = idx;
-          tabs[active].el.classList.add('active');
+  /* Tabs with a single iframe: store URLs per tab, swap iframe.src on switch.
+     Home shows when active tab has no URL. Header is fixed & edge-to-edge. */
+  addEventListener('DOMContentLoaded',()=>{
+    const tabsWrap=document.getElementById('tabs');
+    const addBtn=document.getElementById('tab-add');
+    const form=document.getElementById('sj-form');
+    const addr=document.getElementById('sj-address');
+    const frame=document.getElementById('sj-frame');
+    const home=document.getElementById('home');
 
-          const url = tabs[active].url || '';
-          if (url) { frame.src = url; frame.style.display='block'; }
-          addr.placeholder = url ? labelFrom(url) : 'URL or search…';
-          updateHomeVisibility();
-        }
+    let tabs=[];           // { id, el, url }
+    let active=-1;
+    let nextId=1;
 
-        function addTab(initialUrl){
-          const id = nextId++;
-          const tabEl = document.createElement('div');
-          tabEl.className='tab';
-          tabEl.dataset.id=id;
-          tabEl.innerHTML=`<span class="label">New Tab</span><span class="close" title="Close">×</span>`;
-          tabsEl.insertBefore(tabEl, addEl);
+    function updateHome(){
+      const show=(!tabs.length || !tabs[active]?.url);
+      home.style.display=show?'block':'none';
+      if(show){ frame.removeAttribute('src'); frame.style.display='none'; }
+      measureChrome();
+    }
+    function setActive(idx){
+      if(idx===active || idx<0 || idx>=tabs.length) return;
+      if(active>=0) tabs[active].el.classList.remove('active');
+      active=idx;
+      tabs[active].el.classList.add('active');
+      const url=tabs[active].url||'';
+      if(url){ frame.src=url; frame.style.display='block'; }
+      addr.placeholder=url?labelFrom(url):'URL or search…';
+      updateHome();
+    }
+    function addTab(initialUrl){
+      const id=nextId++;
+      const el=document.createElement('div');
+      el.className='tab'; el.dataset.id=id;
+      el.innerHTML=`<span class="label">New Tab</span><span class="close" title="Close">×</span>`;
+      tabsWrap.insertBefore(el, addBtn);
 
-          const tab = { id, el: tabEl, url: initialUrl || '' };
-          if (tab.url) tabEl.querySelector('.label').textContent = labelFrom(tab.url);
-          tabs.push(tab);
+      const tab={ id, el, url: initialUrl||'' };
+      if(tab.url) el.querySelector('.label').textContent=labelFrom(tab.url);
+      tabs.push(tab);
 
-          tabEl.addEventListener('click', (e)=>{
-            if (e.target && e.target.classList && e.target.classList.contains('close')) return;
-            const idx = tabs.findIndex(t=>t.id===id); setActive(idx);
-          });
-          tabEl.querySelector('.close').addEventListener('click', (e)=>{
-            e.stopPropagation(); closeTabById(id);
-          });
-
-          setActive(tabs.length-1);
-        }
-
-        function closeTabById(id){
-          const idx = tabs.findIndex(t=>t.id===id);
-          if (idx===-1) return;
-          const wasActive = (idx===active);
-          tabs[idx].el.remove();
-          tabs.splice(idx,1);
-          if (!tabs.length){ addTab(); return; }
-          if (wasActive) setActive(Math.max(0, idx-1));
-          else if (idx<active) active -= 1;
-          updateHomeVisibility();
-        }
-
-        addEl.addEventListener('click', ()=>addTab());
-
-        /* Normalize BEFORE your existing submit handler; also store URL per tab */
-        form.addEventListener('submit', ()=>{
-          const n = normalizeInput(addr.value);
-          addr.value = n; // your search.js uses this
-          if (active>=0) {
-            tabs[active].url = n;
-            tabs[active].el.querySelector('.label').textContent = labelFrom(n);
-          }
-          // Let runtime show iframe after navigation; we also toggle for immediate UX
-          frame.style.display = 'block';
-          home.style.display  = 'none';
-        }, true);
-
-        /* Clicking the big home title opens a new blank tab (optional UX) */
-        document.getElementById('home-title').addEventListener('click', () => addTab());
-
-        addTab(); // initial blank tab (shows Home)
-        updateHomeVisibility();
+      el.addEventListener('click',(e)=>{
+        if(e.target?.classList?.contains('close')) return;
+        const idx=tabs.findIndex(t=>t.id===id); setActive(idx);
       });
-    </script>
-  </head>
+      el.querySelector('.close').addEventListener('click',(e)=>{
+        e.stopPropagation();
+        closeTabById(id);
+      });
 
-  <body>
-    <!-- Fixed header -->
-    <div class="chrome" role="navigation">
-      <div class="top">
-        <!-- Tabs -->
-        <div class="tabs" id="tabs" role="tablist" aria-label="Tabs">
-          <!-- tabs inserted dynamically -->
-          <button id="tab-add" class="tab-add" title="New tab">+</button>
-        </div>
-        <!-- Address bar (keep Scramjet IDs) -->
-        <form id="sj-form" class="bar" autocomplete="off">
-          <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
-          <input id="sj-address" type="text" placeholder="URL or search…" spellcheck="false" inputmode="url" />
-        </form>
-      </div>
+      setActive(tabs.length-1);
+    }
+    function closeTabById(id){
+      const idx=tabs.findIndex(t=>t.id===id);
+      if(idx===-1) return;
+      const wasActive=(idx===active);
+      tabs[idx].el.remove();
+      tabs.splice(idx,1);
+      if(!tabs.length){ addTab(); return; }
+      if(wasActive) setActive(Math.max(0,idx-1));
+      else if(idx<active) active-=1;
+      updateHome();
+    }
+
+    addBtn.addEventListener('click',()=>addTab());
+
+    // Normalize BEFORE your existing submit handler; store URL per tab
+    form.addEventListener('submit',()=>{
+      const n=normalizeInput(addr.value);
+      addr.value=n; // your search.js uses this
+      if(active>=0){
+        tabs[active].url=n;
+        tabs[active].el.querySelector('.label').textContent=labelFrom(n);
+      }
+      frame.style.display='block';
+      home.style.display='none';
+    }, true);
+
+    // Init
+    addTab(); updateHome();
+  });
+</script>
+</head>
+
+<body>
+  <!-- Edge-to-edge fixed Chrome bar -->
+  <div class="chrome" role="navigation" aria-label="Browser controls">
+    <div class="tabs-wrap" id="tabs" role="tablist" aria-label="Tabs">
+      <!-- Tabs inserted here -->
+      <button id="tab-add" class="tab-add" title="New tab">+</button>
     </div>
+    <!-- Connected omnibox (keep Scramjet IDs) -->
+    <form id="sj-form" class="omnibox" autocomplete="off" role="search">
+      <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
+      <input id="sj-address" type="text" placeholder="URL or search…" spellcheck="false" inputmode="url" />
+    </form>
+  </div>
 
-    <!-- Home page (visible when no URL in active tab) -->
-    <main class="home" id="home" role="main">
-      <h1 class="title" id="home-title">PROJECT TRINITY</h1>
-      <p class="subtitle">Plain black & white. Tabs on top. Just a box that works.</p>
-      <div class="tips">
-        <div>Tip: type a domain (e.g., <code>example.com</code>) or a query to search.</div>
-        <div>New tab: click <strong>+</strong> (top right). Close tab: click <strong>×</strong>.</div>
-      </div>
-      <nav class="links" aria-label="Links">
-        <a href="credits.html">Credits</a><span>·</span>
-        <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Github</a><span>·</span>
-        <a href="https://www.trinity.gt.tc" target="_blank" rel="noopener">TRINITY</a><span>·</span>
-        <span>PT © 2025</span>
-      </nav>
-    </main>
+  <!-- Home (visible when active tab has no URL) -->
+  <main class="home" id="home">
+    <h1 class="title">PROJECT TRINITY</h1>
+    <p class="subtitle">Black & white. Chrome-style tabs. Just a box that works.</p>
+    <div class="links">
+      <a href="credits.html">Credits</a><span>·</span>
+      <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Github</a><span>·</span>
+      <a href="https://www.trinity.gt.tc" target="_blank" rel="noopener">TRINITY</a><span>·</span>
+      <span>PT © 2025</span>
+    </div>
+  </main>
 
-    <!-- Single iframe sized under the fixed header -->
-    <iframe id="sj-frame"></iframe>
+  <!-- Single iframe under the fixed header -->
+  <iframe id="sj-frame"></iframe>
 
-    <!-- Hooks (kept for your scripts, hidden in CSS) -->
-    <p id="sj-error"></p>
-    <pre id="sj-error-code"></pre>
-  </body>
+  <!-- Hooks (kept, visually hidden) -->
+  <p id="sj-error"></p>
+  <pre id="sj-error-code"></pre>
+</body>
 </html>
