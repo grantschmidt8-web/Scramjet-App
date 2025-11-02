@@ -26,7 +26,7 @@
     background:linear-gradient(180deg, rgba(18,18,18,.82), rgba(12,12,12,.68)); border-bottom:1px solid var(--stroke); box-shadow:var(--shadow); }
   html[data-collapsed="1"] .chrome{ display:none; }
   .row{ display:flex; align-items:center; gap:10px; padding:10px 12px; }
-  .row.tabs{ border-bottom:1px solid var(--stroke); padding-bottom:8px; align-items:flex-end; overflow:visible; } /* <-- prevent hover clip */
+  .row.tabs{ border-bottom:1px solid var(--stroke); padding-bottom:8px; align-items:flex-end; overflow:visible; } /* prevent hover clip */
 
   .tabs-wrap{ flex:1 1 auto; display:flex; align-items:flex-end; gap:8px; overflow-x:auto; padding-left:6px; scrollbar-width:none; }
   .tabs-wrap::-webkit-scrollbar{ display:none }
@@ -73,7 +73,7 @@
     position:fixed; left:0; right:0; top:var(--chrome-h);
     width:100vw; height:calc(100vh - var(--chrome-h));
     border:none; background:#0b0b0b;
-    z-index: 9998;
+    z-index: 9998;   /* under header */
     display:none;
   }
   html[data-collapsed="1"] #sj-frame{ top:0; height:100vh; }
@@ -81,6 +81,7 @@
   @media (max-width:820px){ :root{ --chrome-h:124px } .tab{ max-width:180px } }
 </style>
 
+<!-- Runtime/transport -->
 <script src="/scram/scramjet.all.js"></script>
 <script src="/baremux/index.js" defer></script>
 <script src="/epoxy/index.js" defer></script>
@@ -93,7 +94,14 @@
   (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
 
   const LS_KEY = 'pt_chrome_collapsed';
-  const DARK_FAV = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="%23222222"/><path d="M6 12h12M12 6v12" stroke="%236e6e6e" stroke-width="1.5" stroke-linecap="round"/></svg>';
+
+  /* Dark placeholder favicon built safely (no broken quotes) */
+  const DARK_FAV = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
+      '<rect width="24" height="24" rx="4" fill="#222222"/>' +
+      '<path d="M6 12h12M12 6v12" stroke="#6e6e6e" stroke-width="1.5" stroke-linecap="round"/>' +
+    '</svg>'
+  );
 
   /* Build a Scramjet URL for assets */
   function prox(u){
@@ -133,9 +141,13 @@
     const inspectBtn=document.getElementById('inspect');
     const headerFav = document.getElementById('site-favicon');
 
-    let tabs=[]; let active=-1; let nextId=1; let inspectorOn=false;
-    let userEditing=false;
+    /* set dark placeholder in header immediately */
+    if (headerFav) headerFav.src = DARK_FAV;
 
+    let tabs=[]; let active=-1; let nextId=1; let inspectorOn=false;
+
+    /* user-editing lock so sync doesn't stomp typing */
+    let userEditing=false;
     addr.addEventListener('focus', ()=>{ userEditing = true; });
     addr.addEventListener('input', ()=>{ userEditing = true; });
     addr.addEventListener('blur',  ()=>{ userEditing = false; });
@@ -152,6 +164,7 @@
       return q.replace(/^http:\/\//i,'https://');
     }
 
+    /* Extract real target URL from Scramjet path */
     function extractTargetFromScramjet(proxiedHref){
       try{
         const u = new URL(proxiedHref, location.origin);
@@ -260,13 +273,13 @@
       }
     });
 
-    document.getElementById('tab-add').addEventListener('click',()=>{
+    addBtn.addEventListener('click',()=>{
       setCollapsed(false);
       addTab();
       focusAddr();
     });
 
-    document.getElementById('reload').addEventListener('click',()=>{
+    reloadBtn.addEventListener('click',()=>{
       if (!tabs.length || active<0) return;
       const proxied = frame.getAttribute('src');
       if (proxied) {
@@ -282,7 +295,7 @@
       }
     });
 
-    /* ---------- FAVICON + TITLE ---------- */
+    /* ---------- FAVICON + TITLE (proxied, robust) ---------- */
     function safeAbs(href, base){ try { return new URL(href, base).href; } catch { return ''; } }
 
     function collectFaviconsFromDoc(doc){
@@ -345,7 +358,7 @@
 
       if (target) {
         tabs[active].url = target;
-        setAddressBar(target);
+        setAddressBar(target);                // respects userEditing lock
       }
 
       let didDoc=false;
@@ -368,8 +381,9 @@
         } catch {}
       }
     }
-    /* ------------------------------------- */
+    /* ------------------------------------------------------- */
 
+    /* Mini Inspector (toggle); cross-origin guarded */
     function disableInspector(){
       try{
         const w = frame.contentWindow; const d = w.document;
@@ -380,27 +394,75 @@
         d.removeEventListener('keydown', w.__mini_inspector_key, true);
         w.__mini_inspector_move = w.__mini_inspector_click = w.__mini_inspector_key = null;
       }catch(_){}
-      inspectorOn=false; document.getElementById('inspect').classList.remove('toggled');
+      inspectorOn=false; inspectBtn.classList.remove('toggled');
     }
     function enableInspector(){
       try { void frame.contentDocument; }
       catch { disableInspector(); return; }
       const w = frame.contentWindow, d = w.document;
-      if (d.getElementById('__mini_inspector_overlay__')) { inspectorOn=true; document.getElementById('inspect').classList.add('toggled'); return; }
-      // (panel code omitted here for brevity — unchanged from your last file)
+      if (d.getElementById('__mini_inspector_overlay__')) { inspectorOn=true; inspectBtn.classList.add('toggled'); return; }
+      const overlay = d.createElement('div'); overlay.id='__mini_inspector_overlay__';
+      overlay.style.cssText='position:fixed;pointer-events:none;border:1px solid rgba(180,180,180,.9);outline:9999px solid rgba(0,0,0,.50);border-radius:8px;z-index:2147483646;left:0;top:0;width:0;height:0;';
+      const info = d.createElement('div'); info.style.cssText='position:fixed;pointer-events:none;z-index:2147483647;background:rgba(22,22,22,.96);color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:8px;padding:4px 8px;font:12px "Courier New",monospace;transform:translateY(-26px);';
+      overlay.appendChild(info);
+      const panel = d.createElement('div'); panel.id='__mini_inspector_panel__';
+      panel.style.cssText='position:fixed;right:12px;bottom:12px;z-index:2147483647;color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:14px;padding:10px;max-width:48vw;min-width:300px;font:12px "Courier New",monospace;background:linear-gradient(180deg, rgba(24,24,24,.98), rgba(16,16,16,.94));';
+      panel.innerHTML = `
+        <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <strong>Inspector</strong>
+          <button id="__mi_close__" style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:8px;padding:4px 8px;cursor:pointer">Close</button>
+        </div>
+        <div style="margin-bottom:6px">Selected: <code id="__mi_sel__"></code></div>
+        <label>textContent</label>
+        <textarea id="__mi_text__" style="width:100%;height:70px;background:rgba(18,18,18,.96);color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:10px;margin:4px 0 8px;resize:vertical;"></textarea>
+        <label>outerHTML</label>
+        <textarea id="__mi_html__" style="width:100%;height:150px;background:rgba(18,18,18,.96);color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:10px;margin:4px 0 10px;resize:vertical;"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="__mi_apply__"  style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Apply HTML</button>
+          <button id="__mi_textbtn__"style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Apply Text</button>
+          <button id="__mi_delete__" style="background:transparent;color:#ff8f8f;border:1px solid rgba(255,143,143,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Delete Node</button>
+        </div>
+      `;
+      d.body.appendChild(overlay); d.body.appendChild(panel);
+      let current=null;
+      function fmt(el){ if(!el) return ''; const tag=el.tagName.toLowerCase(); const id=el.id?`#${el.id}`:''; const cls=(el.className && typeof el.className==='string')?'.'+el.className.trim().split(/\s+/).join('.') : ''; return `${tag}${id}${cls}`; }
+      w.__mini_inspector_move = function(ev){
+        if (!ev.target || ev.target===overlay || ev.target===panel || panel.contains(ev.target)) return;
+        const el=ev.target, r=el.getBoundingClientRect?.(); if(!r) return;
+        overlay.style.left=r.left+'px'; overlay.style.top=r.top+'px'; overlay.style.width=r.width+'px'; overlay.style.height=r.height+'px';
+        info.textContent = fmt(el) + `  ${Math.round(r.width)}×${Math.round(r.height)}`;
+        info.style.left = Math.max(6, Math.min(r.left, d.documentElement.clientWidth - 220)) + 'px';
+        info.style.top  = (r.top - 8) + 'px';
+      };
+      w.__mini_inspector_click = function(ev){
+        if (panel.contains(ev.target)) return;
+        ev.preventDefault(); ev.stopPropagation();
+        current = ev.target;
+        d.getElementById('__mi_sel__').textContent = fmt(current);
+        d.getElementById('__mi_text__').value = current.textContent;
+        try { d.getElementById('__mi_html__').value = current.outerHTML; } catch { d.getElementById('__mi_html__').value='<!-- cannot serialize -->'; }
+      };
+      w.__mini_inspector_key = function(ev){
+        if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); parent.postMessage({__mini_inspector_cmd:'off'}, '*'); }
+      };
+      d.addEventListener('mousemove', w.__mini_inspector_move, true);
+      d.addEventListener('click',     w.__mini_inspector_click, true);
+      d.addEventListener('keydown',   w.__mini_inspector_key, true);
+      panel.querySelector('#__mi_close__').onclick = ()=> parent.postMessage({__mini_inspector_cmd:'off'}, '*');
     }
 
-    document.getElementById('inspect').addEventListener('click', ()=>{
+    inspectBtn.addEventListener('click', ()=>{
       if (inspectorOn) { try { frame.contentWindow.postMessage({__mini_inspector_cmd:'off'}, '*'); } catch(_){}
         disableInspector();
       } else { enableInspector(); }
     });
 
+    /* Submit: navigate & show EXACT URL immediately */
     form.addEventListener('submit',()=>{
       const n = normalizeInput(addr.value);
       if (active>=0) { tabs[active].url = n; addr.dataset.raw = n; }
-      setAddressBar(n, {force:true});
-      userEditing = false;
+      setAddressBar(n, {force:true});   // force update even if focused
+      userEditing = false;              // release lock after submit
       frame.style.display = 'block';
       home.style.display  = 'none';
       setTimeout(updateTabMetaFromFrame, 700);
@@ -417,7 +479,7 @@
       if (target && target !== lastMeta.url){
         lastMeta.url = target;
         if (active>=0) tabs[active].url = target;
-        setAddressBar(target);
+        setAddressBar(target);          // skips if user is typing
       }
       updateTabMetaFromFrame();
     }
@@ -447,8 +509,8 @@
       <div class="omnibox">
         <button id="reload"  class="btn" title="Reload">↻</button>
         <button id="inspect" class="btn" title="Inspect (toggle)">&lt;/&gt;</button>
-        <!-- Dark placeholder favicon by default -->
-        <img id="site-favicon" alt="" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='4' fill='%23222222'/><path d='M6 12h12M12 6v12' stroke='%236e6e6e' stroke-width='1.5' stroke-linecap='round'/></svg>" referrerpolicy="no-referrer" crossorigin="anonymous" />
+        <!-- safe empty src; JS sets dark placeholder -->
+        <img id="site-favicon" alt="" src="" referrerpolicy="no-referrer" crossorigin="anonymous" />
         <form id="sj-form" class="bar" autocomplete="off" role="search">
           <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
           <input id="sj-address" type="text" placeholder="URL or search…" spellcheck="false" inputmode="url" />
