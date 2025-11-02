@@ -34,12 +34,11 @@
   html[data-collapsed="1"] .chrome{ display:none; }
 
   .row{ display:flex; align-items:center; gap:10px; padding:10px 12px; }
-  /* Clip tab glows; remove bottom padding so tabs sit ON the border */
   .row.tabs{
     padding:8px 12px 0;
     border-bottom:1px solid var(--stroke);
     align-items:flex-end;
-    overflow:hidden; /* hides weird glow spill at the top/edges */
+    overflow:hidden;
   }
 
   .tabs-wrap{
@@ -49,7 +48,6 @@
   }
   .tabs-wrap::-webkit-scrollbar{ display:none }
 
-  /* Tabs (same height for real tabs and + button) */
   .tab, .tab-add{
     height:var(--tab-h);
     position:relative; display:flex; align-items:center; gap:8px;
@@ -61,33 +59,22 @@
     background:linear-gradient(180deg, rgba(28,28,28,.92), rgba(18,18,18,.88));
     color:var(--fg);
     box-shadow:0 6px 18px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.03);
-    margin-bottom:-1px; /* overlaps row border for a seamless top edge */
+    margin-bottom:-1px;
     z-index:1;
     transition:box-shadow .12s ease, border-color .12s ease, background .12s ease;
   }
-  .tab:hover, .tab-add:hover{
-    box-shadow:0 10px 26px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04);
-  }
+  .tab:hover, .tab-add:hover{ box-shadow:0 10px 26px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04); }
   .tab.active{
     border-color:var(--accent); border-bottom-color:#0000;
     background:linear-gradient(180deg, rgba(32,32,32,.96), rgba(20,20,20,.92));
-    box-shadow:0 14px 34px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04) inset;
-    z-index:2;
+    box-shadow:0 14px 34px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04) inset; z-index:2;
   }
   .tab .fav{ width:16px; height:16px; border-radius:4px; object-fit:cover; flex:0 0 16px; background:#1a1a1a; border:1px solid #2a2a2a; }
   .tab .label{ overflow:hidden; text-overflow:ellipsis; color:var(--fg) }
   .tab .close{ display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:7px; color:var(--fg-dim); }
 
-  /* New tab button looks like a tab with a plus */
-  .tab-add{
-    flex:0 0 auto; max-width:none; gap:6px;
-    font-weight:700; letter-spacing:.4px;
-  }
-  .tab-add::before{
-    content:"+";
-    display:inline-block; line-height:1; font-size:16px; color:var(--fg);
-    transform: translateY(-1px);
-  }
+  .tab-add{ flex:0 0 auto; max-width:none; gap:6px; font-weight:700; letter-spacing:.4px; }
+  .tab-add::before{ content:"+"; display:inline-block; line-height:1; font-size:16px; color:var(--fg); transform: translateY(-1px); }
 
   .omnibox{ flex:1 1 auto; display:flex; align-items:center; gap:10px; padding:6px 12px; min-width:0; }
   .btn{
@@ -99,7 +86,6 @@
   }
   .btn.icon{ width:34px; min-width:34px; padding:0; font-size:16px; }
 
-  /* Floating expand button for collapsed state */
   .fab{
     position:fixed; top:10px; right:12px; z-index:10005;
     border:1px solid var(--stroke);
@@ -143,7 +129,6 @@
   }
   html[data-collapsed="1"] #sj-frame{ top:0; height:100vh; }
 
-  /* Settings Popover */
   .settings-pop{
     position:fixed; z-index:10004; display:none;
     border:1px solid var(--stroke); border-radius:12px; padding:12px;
@@ -195,6 +180,7 @@
 <script src="/epoxy/index.js" defer></script>
 <script src="https://unpkg.com/wisp-js/dist/wisp.min.js" defer></script>
 <script src="register-sw.js" defer></script>
+<!-- search.js can stay, but we no longer rely on it -->
 <script src="search.js" defer></script>
 <script src="index.js" defer></script>
 
@@ -206,7 +192,6 @@
   const LS_KEY_GRAD_DARK  = 'pt_gradient_dark';
   const LS_KEY_GRAD_LIGHT = 'pt_gradient_light';
 
-  /* theme-aware default icons (data URIs) */
   const DARK_FAV = 'data:image/svg+xml;utf8,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'+
       '<rect width="24" height="24" rx="4" fill="#222222"/>'+
@@ -219,9 +204,7 @@
       '<path d="M6 12h12M12 6v12" stroke="#2b2b2b" stroke-width="1.7" stroke-linecap="round"/>'+
     '</svg>'
   );
-  function currentDefaultFav(){
-    return (document.documentElement.dataset.theme === 'light') ? LIGHT_FAV : DARK_FAV;
-  }
+  function currentDefaultFav(){ return (document.documentElement.dataset.theme === 'light') ? LIGHT_FAV : DARK_FAV; }
 
   const THEMES = {
     dark: { fg:'#e6e6e6', dim:'#bdbdbd', bg:'#0a0a0a', stroke:'#262626', accent:'#8a8a8a',
@@ -231,8 +214,7 @@
       btnBg:'linear-gradient(180deg, rgba(26,26,26,.95), rgba(18,18,18,.9))',
       tabBg:'linear-gradient(180deg, rgba(28,28,28,.92), rgba(18,18,18,.88))',
       tabBgAct:'linear-gradient(180deg, rgba(32,32,32,.96), rgba(20,20,20,.92))',
-      iframeBg:'#0b0b0b',
-      rad1:'rgba(140,140,140,.10)', rad2:'rgba(160,160,160,.08)'
+      iframeBg:'#0b0b0b', rad1:'rgba(140,140,140,.10)', rad2:'rgba(160,160,160,.08)'
     },
     light: { fg:'#111', dim:'#444', bg:'#f5f6f8', stroke:'#d5d7db', accent:'#8a8a8a',
       chromeBg:'linear-gradient(180deg, rgba(255,255,255,.82), rgba(248,248,248,.88))',
@@ -241,12 +223,10 @@
       btnBg:'linear-gradient(180deg, rgba(255,255,255,.96), rgba(244,244,244,.94))',
       tabBg:'linear-gradient(180deg, rgba(255,255,255,.95), rgba(245,245,245,.92))',
       tabBgAct:'linear-gradient(180deg, rgba(255,255,255,.98), rgba(238,238,238,.96))',
-      iframeBg:'#ffffff',
-      rad1:'rgba(0,0,0,.06)', rad2:'rgba(0,0,0,.04)'
+      iframeBg:'#ffffff', rad1:'rgba(0,0,0,.06)', rad2:'rgba(0,0,0,.04)'
     }
   };
 
-  /* gradients */
   const GRADS = {
     graphite:{ theme:'dark',  sw:['#0a0a0a','#0d0d0d','#121212'] },
     abyss:   { theme:'dark',  sw:['#0a0f1a','#0b1320','#0c1726'] },
@@ -310,24 +290,13 @@
 
   function applyThemeIcons(themeName){
     const defFav = (themeName === 'light') ? LIGHT_FAV : DARK_FAV;
-
     const headerFav = document.getElementById('site-favicon');
     if (headerFav){
-      if (headerFav.src === '' || headerFav.src === DARK_FAV || headerFav.src === LIGHT_FAV) {
-        headerFav.src = defFav;
-      }
+      if (headerFav.src === '' || headerFav.src === DARK_FAV || headerFav.src === LIGHT_FAV) headerFav.src = defFav;
     }
     document.querySelectorAll('.tab .fav').forEach(img=>{
       if (img.src === '' || img.src === DARK_FAV || img.src === LIGHT_FAV) img.src = defFav;
     });
-  }
-
-  function applyGradient(name){
-    const theme = localStorage.getItem(LS_KEY_THEME) || 'dark';
-    const g = GRADS[name]; if (!g || g.theme !== theme) return;
-    setGradientVars(name);
-    localStorage.setItem(theme === 'light' ? LS_KEY_GRAD_LIGHT : LS_KEY_GRAD_DARK, name);
-    applyTheme(theme);
   }
 
   function applyTheme(name){
@@ -362,14 +331,8 @@
     applyThemeIcons(name);
   }
 
-  function applyGradientToUIActiveState(){
-    const theme = document.documentElement.dataset.theme || 'dark';
-    const current = (theme==='light'
-      ? localStorage.getItem(LS_KEY_GRAD_LIGHT)
-      : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(theme);
-    document.querySelectorAll('.swatch').forEach(el=>{
-      el.dataset.active = (el.dataset.value === current ? '1' : '0');
-    });
+  function buildBodyGradient(theme){
+    return buildBodyBackground(theme);
   }
 
   function measureChrome(){
@@ -378,12 +341,10 @@
     const h = collapsed || !c ? 0 : Math.ceil(c.getBoundingClientRect().height);
     document.documentElement.style.setProperty('--chrome-h', h+'px');
   }
-
   function setCollapsed(on){
     document.documentElement.dataset.collapsed = on ? '1' : '0';
     localStorage.setItem(LS_KEY_COLLAPSE, on ? '1' : '0');
     measureChrome();
-
     const t=document.getElementById('chrome-toggle');
     if (t){
       t.textContent = on ? '+' : '–';
@@ -435,6 +396,7 @@
     const inspectBtn = document.getElementById('inspect');
     const headerFav  = document.getElementById('site-favicon');
     const settingsBtn= document.getElementById('settings');
+    const settingsPop= document.getElementById('settings-pop');
 
     if (headerFav) headerFav.src = currentDefaultFav();
 
@@ -469,23 +431,6 @@
       if (show) { frame.removeAttribute('src'); frame.style.display='none'; }
     }
 
-    function setActive(idx){
-      if (idx===active || idx<0 || idx>=tabs.length) return;
-      if (active>=0) tabs[active].el.classList.remove('active');
-      active=idx; tabs[active].el.classList.add('active');
-      repaintTabsForTheme();
-
-      const url=tabs[active].url||'';
-      if (url) {
-        addr.dataset.raw = url; setAddressBar(url, {force:true});
-        if (form.requestSubmit) form.requestSubmit();
-        else form.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
-      } else {
-        clearAddressBar(); frame.removeAttribute('src'); frame.style.display='none'; home.style.display='block';
-      }
-      updateHome();
-    }
-
     function addTab(initialUrl){
       const id=nextId++;
       const el=document.createElement('div');
@@ -500,7 +445,6 @@
       setActive(tabs.length-1);
       measureChrome();
     }
-
     function closeTabById(id){
       const idx=tabs.findIndex(t=>t.id===id); if (idx===-1) return;
       const wasActive=(idx===active); tabs[idx].el.remove(); tabs.splice(idx,1);
@@ -514,32 +458,43 @@
       if (closeEl) { e.preventDefault(); e.stopPropagation(); const tabEl = closeEl.closest('.tab'); if (tabEl) closeTabById(Number(tabEl.dataset.id)); return; }
       const tabEl = e.target.closest('.tab'); if (tabEl) { e.preventDefault(); const idx = tabs.findIndex(t=>t.id===Number(tabEl.dataset.id)); setActive(idx); }
     });
+    addBtn.addEventListener('click',()=>{ document.documentElement.dataset.collapsed='0'; localStorage.setItem(LS_KEY_COLLAPSE,'0'); addTab(); });
 
-    document.getElementById('tab-add').addEventListener('click',()=>{ 
-      document.documentElement.dataset.collapsed='0'; localStorage.setItem(LS_KEY_COLLAPSE,'0');
-      addTab(); 
-    });
+    /* ---- DIRECT NAVIGATION ---- */
+    function go(raw){
+      const n = normalizeInput(raw || '');
+      if (!n) return;
+      addr.value = n;
+      if (active >= 0) {
+        tabs[active].url = n;
+        tabs[active].el.querySelector('.label').textContent = prettyLabel(n);
+      }
+      frame.src = prox(n);
+      frame.style.display = 'block';
+      home.style.display  = 'none';
+      setTimeout(updateTabMetaFromFrame, 700);
+    }
 
-    document.getElementById('reload').addEventListener('click',()=>{
+    function setActive(idx){
+      if (idx===active || idx<0 || idx>=tabs.length) return;
+      if (active>=0) tabs[active].el.classList.remove('active');
+      active=idx; tabs[active].el.classList.add('active');
+      repaintTabsForTheme();
+      const url=tabs[active].url||'';
+      if (url) { go(url); }
+      else { clearAddressBar(); frame.removeAttribute('src'); frame.style.display='none'; home.style.display='block'; }
+      updateHome();
+    }
+
+    form.addEventListener('submit',(e)=>{ e.preventDefault(); go(addr.value); });
+    reloadBtn.addEventListener('click',()=>{
       if (!tabs.length || active<0) return;
       const proxied = frame.getAttribute('src');
       if (proxied) { try { frame.contentWindow.location.reload(); } catch { frame.src = proxied; } }
-      else {
-        const raw = tabs[active].url || ''; if (!raw) return;
-        addr.dataset.raw = raw; setAddressBar(raw, {force:true});
-        if (form.requestSubmit) form.requestSubmit(); else form.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
-      }
+      else if (tabs[active].url) { go(tabs[active].url); }
     });
 
-    /* form submit */
-    form.addEventListener('submit',()=>{
-      const n = normalizeInput(addr.value);
-      if (active>=0) { tabs[active].url = n; addr.dataset.raw = n; }
-      setAddressBar(n, {force:true});
-      frame.style.display='block'; home.style.display='none';
-      setTimeout(updateTabMetaFromFrame, 700);
-    }, true);
-
+    /* Favicons + title from iframe */
     function applyFavicon(candidates){
       const headerFav = document.getElementById('site-favicon');
       const tabImg = tabs[active]?.el.querySelector('.fav');
@@ -565,7 +520,6 @@
       }
       next();
     }
-
     function updateTabMetaFromFrame(){
       if (active<0) return;
       let rawTarget = null; try { rawTarget = frame.contentWindow.location.href; } catch {}
@@ -602,77 +556,134 @@
         } catch {}
       }
     }
-
     frame.addEventListener('load', ()=>setTimeout(updateTabMetaFromFrame, 150));
     setInterval(updateTabMetaFromFrame, 900);
 
+    /* Mini Inspector (unchanged core) */
+    function disableInspector(){
+      try{
+        const w = frame.contentWindow; const d = w.document;
+        d.querySelector('#__mini_inspector_overlay__')?.remove();
+        d.querySelector('#__mini_inspector_panel__')?.remove();
+        d.removeEventListener('mousemove', w.__mini_inspector_move, true);
+        d.removeEventListener('click', w.__mini_inspector_click, true);
+        d.removeEventListener('keydown', w.__mini_inspector_key, true);
+        w.__mini_inspector_move = w.__mini_inspector_click = w.__mini_inspector_key = null;
+      }catch(_){}
+      inspectorOn=false; inspectBtn.classList.remove('toggled');
+    }
+    function enableInspector(){
+      try { void frame.contentDocument; }
+      catch { disableInspector(); return; }
+      const w = frame.contentWindow, d = w.document;
+      if (d.getElementById('__mini_inspector_overlay__')) { inspectorOn=true; inspectBtn.classList.add('toggled'); return; }
+      const overlay = d.createElement('div');
+      overlay.id='__mini_inspector_overlay__';
+      overlay.style.cssText='position:fixed;pointer-events:none;border:1px solid rgba(180,180,180,.9);outline:9999px solid rgba(0,0,0,.50);border-radius:8px;z-index:2147483646;left:0;top:0;width:0;height:0;box-shadow:0 0 0 1px rgba(255,255,255,.04) inset';
+      const info = d.createElement('div');
+      info.style.cssText='position:fixed;pointer-events:none;z-index:2147483647;background:rgba(22,22,22,.96);color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:8px;padding:4px 8px;font:12px "Courier New",monospace;transform:translateY(-26px);box-shadow:0 8px 20px rgba(0,0,0,.55)';
+      overlay.appendChild(info);
+      const panel = d.createElement('div');
+      panel.id='__mini_inspector_panel__';
+      panel.style.cssText='position:fixed;right:12px;bottom:12px;z-index:2147483647;color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:14px;padding:10px;max-width:48vw;min-width:300px;font:12px "Courier New",monospace;background:linear-gradient(180deg, rgba(24,24,24,.98), rgba(16,16,16,.94));box-shadow:0 16px 40px rgba(0,0,0,.65)';
+      panel.innerHTML = `
+        <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <strong>Inspector</strong>
+          <button id="__mi_close__" style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:8px;padding:4px 8px;cursor:pointer">Close</button>
+        </div>
+        <div style="margin-bottom:6px">Selected: <code id="__mi_sel__"></code></div>
+        <label>textContent</label>
+        <textarea id="__mi_text__" style="width:100%;height:70px;background:rgba(18,18,18,.96);color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:10px;margin:4px 0 8px;resize:vertical;"></textarea>
+        <label>outerHTML</label>
+        <textarea id="__mi_html__" style="width:100%;height:150px;background:rgba(18,18,18,.96);color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:10px;margin:4px 0 10px;resize:vertical;"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="__mi_apply__"  style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Apply HTML</button>
+          <button id="__mi_textbtn__"style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Apply Text</button>
+          <button id="__mi_delete__" style="background:transparent;color:#ff8f8f;border:1px solid rgba(255,143,143,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Delete Node</button>
+        </div>
+      `;
+      d.body.appendChild(overlay); d.body.appendChild(panel);
+      let current=null;
+      function fmt(el){ if(!el) return ''; const tag=el.tagName.toLowerCase(); const id=el.id?`#${el.id}`:''; const cls=(el.className && typeof el.className==='string')?'.'+el.className.trim().split(/\s+/).join('.') : ''; return `${tag}${id}${cls}`; }
+      w.__mini_inspector_move = function(ev){
+        if (!ev.target || ev.target===overlay || ev.target===panel || panel.contains(ev.target)) return;
+        const el=ev.target, r=el.getBoundingClientRect?.(); if(!r) return;
+        overlay.style.left=r.left+'px'; overlay.style.top=r.top+'px'; overlay.style.width=r.width+'px'; overlay.style.height=r.height+'px';
+        info.textContent = fmt(el) + `  ${Math.round(r.width)}×${Math.round(r.height)}`;
+        info.style.left = Math.max(6, Math.min(r.left, d.documentElement.clientWidth - 220)) + 'px';
+        info.style.top  = (r.top - 8) + 'px';
+      };
+      w.__mini_inspector_click = function(ev){
+        if (panel.contains(ev.target)) return;
+        ev.preventDefault(); ev.stopPropagation();
+        current = ev.target;
+        d.getElementById('__mi_sel__').textContent = fmt(current);
+        d.getElementById('__mi_text__').value = current.textContent;
+        try { d.getElementById('__mi_html__').value = current.outerHTML; } catch { d.getElementById('__mi_html__').value='<!-- cannot serialize -->'; }
+      };
+      w.__mini_inspector_key = function(ev){
+        if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); parent.postMessage({__mini_inspector_cmd:'off'}, '*'); }
+      };
+      d.addEventListener('mousemove', w.__mini_inspector_move, true);
+      d.addEventListener('click',     w.__mini_inspector_click, true);
+      d.addEventListener('keydown',   w.__mini_inspector_key, true);
+      panel.querySelector('#__mi_close__').onclick = ()=> parent.postMessage({__mini_inspector_cmd:'off'}, '*');
+      panel.querySelector('#__mi_apply__').onclick = ()=>{ if (!current) return; const html = d.getElementById('__mi_html__').value; try{ const tmp = d.createElement('div'); tmp.innerHTML = html; const repl = tmp.firstElementChild; if (!repl) return; current.replaceWith(repl); current = repl; d.getElementById('__mi_sel__').textContent = fmt(current); }catch{ alert('Invalid HTML'); } };
+      panel.querySelector('#__mi_textbtn__').onclick = ()=>{ if (!current) return; current.textContent = d.getElementById('__mi_text__').value; d.getElementById('__mi_html__').value = current.outerHTML; };
+      panel.querySelector('#__mi_delete__').onclick = ()=>{ if (!current) return; const nxt = current.parentElement || d.body; current.remove(); current = nxt; d.getElementById('__mi_sel__').textContent = fmt(current); try { d.getElementById('__mi_html__').value = current.outerHTML || ''; } catch { d.getElementById('__mi_html__').value=''; } d.getElementById('__mi_text__').value = current.textContent || ''; };
+      w.addEventListener('message', (e)=>{ if (e.data && e.data.__mini_inspector_cmd==='off') { d.removeEventListener('mousemove', w.__mini_inspector_move, true); d.removeEventListener('click',     w.__mini_inspector_click, true); d.removeEventListener('keydown',   w.__mini_inspector_key, true); overlay.remove(); panel.remove(); }});
+      inspectorOn=true; inspectBtn.classList.add('toggled');
+    }
+    inspectBtn.addEventListener('click', ()=>{ if (inspectorOn) { try { frame.contentWindow.postMessage({__mini_inspector_cmd:'off'}, '*'); } catch(_){ } disableInspector(); } else { enableInspector(); } });
+
     /* Settings popover */
+    function defaultGradFor(theme){ return theme === 'light' ? 'paper' : 'graphite'; }
     function openSettingsAtButton(btn){
       const curTheme = document.documentElement.dataset.theme || 'dark';
-      const curGrad  = (curTheme==='light'
-        ? localStorage.getItem(LS_KEY_GRAD_LIGHT)
-        : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(curTheme);
-
-      document.querySelectorAll('.chip[data-group="theme"]').forEach(el=>{
-        el.dataset.active = (el.dataset.value===curTheme?'1':'0');
-      });
-      document.querySelectorAll('.swatch').forEach(el=>{
-        el.dataset.active = (el.dataset.value===curGrad?'1':'0');
-      });
-
-      const r = btn.getBoundingClientRect();
-      const pop = document.getElementById('settings-pop');
-      const margin = 8;
-      pop.style.display = 'block';
-      const popW = pop.offsetWidth || 360;
-      pop.style.display = 'none';
-
+      const curGrad  = (curTheme==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(curTheme);
+      document.querySelectorAll('.chip[data-group="theme"]').forEach(el=>{ el.dataset.active = (el.dataset.value===curTheme?'1':'0'); });
+      document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el.dataset.value===curGrad?'1':'0'); });
+      const r = btn.getBoundingClientRect(); const margin = 8;
+      settingsPop.style.display = 'block'; const popW = settingsPop.offsetWidth || 360; settingsPop.style.display = 'none';
       const left = Math.max(10, Math.min(window.innerWidth - popW - 10, r.left + r.width - popW));
-      pop.style.left = left + 'px';
-      pop.style.top  = (r.bottom + margin) + 'px';
-      pop.style.display = 'block';
-
-      const onDocClick = (e)=>{
-        if (!pop.contains(e.target) && e.target !== btn) {
-          pop.style.display='none';
-          document.removeEventListener('mousedown', onDocClick, true);
-          document.removeEventListener('keydown', onEsc, true);
-        }
-      };
-      const onEsc = (e)=>{ if (e.key==='Escape'){ pop.style.display='none'; document.removeEventListener('mousedown', onDocClick, true); document.removeEventListener('keydown', onEsc, true);} };
+      settingsPop.style.left = left + 'px'; settingsPop.style.top  = (r.bottom + margin) + 'px'; settingsPop.style.display = 'block';
+      const onDocClick = (e)=>{ if (!settingsPop.contains(e.target) && e.target !== btn) { settingsPop.style.display='none'; document.removeEventListener('mousedown', onDocClick, true); document.removeEventListener('keydown', onEsc, true); } };
+      const onEsc = (e)=>{ if (e.key==='Escape'){ settingsPop.style.display='none'; document.removeEventListener('mousedown', onDocClick, true); document.removeEventListener('keydown', onEsc, true);} };
       setTimeout(()=>{ document.addEventListener('mousedown', onDocClick, true); document.addEventListener('keydown', onEsc, true); },0);
     }
-
-    document.getElementById('settings').addEventListener('click', ()=> {
-      openSettingsAtButton(document.getElementById('settings'));
-      const theme = document.documentElement.dataset.theme || 'dark';
-      const cur   = (theme==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(theme);
+    settingsBtn.addEventListener('click', ()=> {
+      openSettingsAtButton(settingsBtn);
+      const th = document.documentElement.dataset.theme || 'dark';
+      const cur= (th==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(th);
       document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el.dataset.value===cur?'1':'0'); });
     });
-
     document.querySelectorAll('.chip[data-group="theme"]').forEach(ch=>{
       ch.addEventListener('click', ()=>{
         const val = ch.dataset.value;
         applyTheme(val);
         document.querySelectorAll('.chip[data-group="theme"]').forEach(el=>{ el.dataset.active = (el===ch?'1':'0'); });
-        const theme = document.documentElement.dataset.theme || 'dark';
-        const cur   = (theme==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(theme);
+        const th = document.documentElement.dataset.theme || 'dark';
+        const cur= (th==='light' ? localStorage.getItem(LS_KEY_GRAD_LIGHT) : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(th);
         document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el.dataset.value===cur?'1':'0'); });
       });
     });
-
     document.querySelectorAll('.swatch').forEach(sw=>{
       sw.addEventListener('click', ()=>{
-        const theme = document.documentElement.dataset.theme || 'dark';
+        const th = document.documentElement.dataset.theme || 'dark';
         const val = sw.dataset.value;
-        if (!GRADS[val] || GRADS[val].theme !== theme) return;
+        if (!GRADS[val] || GRADS[val].theme !== th) return;
         setGradientVars(val);
-        localStorage.setItem(theme==='light' ? LS_KEY_GRAD_LIGHT : LS_KEY_GRAD_DARK, val);
-        document.body.style.background = buildBodyBackground(theme);
+        localStorage.setItem(th==='light' ? LS_KEY_GRAD_LIGHT : LS_KEY_GRAD_DARK, val);
+        document.body.style.background = buildBodyGradient(th);
         document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el===sw?'1':'0'); });
       });
     });
 
+    /* Collapse buttons */
+    document.getElementById('chrome-toggle').addEventListener('click', ()=> setCollapsed(!(document.documentElement.dataset.collapsed==='0' || !document.documentElement.dataset.collapsed)));
+    document.getElementById('chrome-fab').addEventListener('click', ()=> setCollapsed(false));
+
+    /* Init */
     addTab(); updateHome(); measureChrome();
   });
 </script>
@@ -731,12 +742,14 @@
     <div class="settings-group">
       <h4>Gradient</h4>
       <div class="settings-row">
+        <!-- Dark 6 -->
         <div class="swatch" data-theme="dark" data-value="graphite" style="background:linear-gradient(180deg,#0a0a0a,#0d0d0d 55%,#121212)"></div>
         <div class="swatch" data-theme="dark" data-value="abyss"    style="background:linear-gradient(180deg,#0a0f1a,#0b1320 55%,#0c1726)"></div>
         <div class="swatch" data-theme="dark" data-value="violet"   style="background:linear-gradient(180deg,#120a1a,#1a0f2b 55%,#23143a)"></div>
         <div class="swatch" data-theme="dark" data-value="teal"     style="background:linear-gradient(180deg,#071a1a,#0a2222 55%,#0d2a2a)"></div>
         <div class="swatch" data-theme="dark" data-value="slate"    style="background:linear-gradient(180deg,#0c0d10,#101218 55%,#141820)"></div>
         <div class="swatch" data-theme="dark" data-value="obsidian" style="background:linear-gradient(180deg,#0b0c0e,#101318 55%,#171b22)"></div>
+        <!-- Light 6 -->
         <div class="swatch" data-theme="light" data-value="paper"   style="background:linear-gradient(180deg,#f6f7f9,#eef0f4 55%,#e7eaf0)"></div>
         <div class="swatch" data-theme="light" data-value="linen"   style="background:linear-gradient(180deg,#faf7f2,#f2eadf 55%,#e7dcc9)"></div>
         <div class="swatch" data-theme="light" data-value="dawn"    style="background:linear-gradient(180deg,#fdf3f0,#f9e7e2 55%,#f0d9d2)"></div>
