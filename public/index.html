@@ -6,37 +6,31 @@
     <title>PROJECT TRINITY</title>
     <link rel="shortcut icon" content="favicon.webp" />
     <style>
-      :root { --fg:#fff; --bg:#000; --chrome-h:72px; }
+      :root { --fg:#fff; --bg:#000; --chrome-h:56px; } /* thinner header */
       * { box-sizing: border-box; }
       html,body { height:100%; }
-      body {
-        margin:0; background:var(--bg); color:var(--fg);
-        font:16px/1.5 "Courier New", ui-monospace, monospace;
-      }
+      body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.45 "Courier New", ui-monospace, monospace; }
 
-      /* ===== Fixed Chrome (tabs + address bar) ===== */
+      /* ===== Fixed header (tabs + address) — thinner ===== */
       .chrome {
         position:fixed; top:0; left:0; right:0; z-index:10000;
         background:#000; border-bottom:1px solid #fff;
       }
-      .top {
-        max-width:980px; margin:0 auto; padding:8px 12px 10px;
-      }
+      .top { max-width:980px; margin:0 auto; padding:6px 10px 8px; }
+
       /* Tabs */
-      .tabs {
-        display:flex; align-items:center; gap:6px; margin-bottom:8px;
-      }
+      .tabs { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
       .tab {
-        display:flex; align-items:center; gap:8px;
-        padding:6px 10px; border:1px solid transparent; border-radius:4px;
-        cursor:pointer; white-space:nowrap; max-width:220px;
+        display:flex; align-items:center; gap:6px;
+        padding:4px 8px; border:1px solid transparent; border-radius:4px;
+        cursor:pointer; white-space:nowrap; max-width:210px; font-size:14px;
       }
       .tab span.label { overflow:hidden; text-overflow:ellipsis; }
       .tab.active { border-color:#fff; background:#000; }
-      .tab .close { cursor:pointer; opacity:.85; }
+      .tab .close { cursor:pointer; opacity:.9; }
       .tab-add {
         margin-left:auto; border:1px solid #fff; border-radius:4px;
-        padding:6px 10px; background:#000; color:#fff; cursor:pointer;
+        padding:4px 9px; background:#000; color:#fff; cursor:pointer; font-size:14px;
       }
       .tab-add:hover { background:#111; }
 
@@ -44,40 +38,42 @@
       .bar {
         display:flex; align-items:center;
         border:1px solid #fff; border-radius:6px;
-        padding:10px 12px;
+        padding:8px 10px; margin:0;
       }
-      #sj-address{
-        all:unset; color:#fff; width:100%;
-        font:16px/1.4 "Courier New", ui-monospace, monospace;
-      }
+      #sj-address{ all:unset; color:#fff; width:100%; font:15px/1.3 "Courier New", ui-monospace, monospace; }
       #sj-address::placeholder{ color:#bfbfbf; }
       .bar:focus-within{ outline:2px solid #fff; outline-offset:2px; }
 
-      /* Footer (optional, stays under the iframe, not fixed) */
+      /* ===== Home page (shows when no URL is loaded) ===== */
+      .home {
+        max-width:980px; margin:calc(var(--chrome-h) + 24px) auto 16vh; padding:0 18px;
+      }
+      .home .title { margin:0 0 8px; font-size:32px; font-weight:700; }
+      .home .subtitle { margin:0 0 16px; color:#ddd; font-size:12px; }
+      .home .tips { margin-top:14px; color:#ccc; font-size:12px; }
       .links{
-        position:fixed; left:12px; bottom:10px; z-index:10000;
-        display:flex; gap:10px; align-items:center; font-size:13px;
-        background:#000; padding:6px 8px; border:1px solid #fff; border-radius:6px;
+        margin-top:16px; display:flex; gap:10px; align-items:center; font-size:12px;
       }
       .links a{ color:#fff; text-decoration:none; border-bottom:1px solid transparent; }
       .links a:hover{ border-bottom-color:#fff; }
 
-      /* Hide error UI but keep hooks present */
+      /* Hooks hidden visually but present */
       #sj-error, #sj-error-code { display:none; }
 
-      /* ===== Single results surface sized under the fixed chrome ===== */
+      /* ===== Single results surface below header ===== */
       #sj-frame{
         border:none; position:fixed; left:0; right:0;
         top:var(--chrome-h); height:calc(100vh - var(--chrome-h));
-        width:100vw; background:#000; z-index:9999; display:none;
+        width:100vw; background:#000; z-index:9999; display:none; /* runtime may also toggle */
       }
 
       @media (max-width:640px){
-        .tab { max-width:160px; }
+        .tab{ max-width:150px; font-size:13px; }
+        .home .title{ font-size:26px; }
       }
     </style>
 
-    <!-- If you actually serve these at /scram /baremux /epoxy, keep slashes; otherwise make them relative -->
+    <!-- If your build serves these at root, keep slashes; otherwise make them relative -->
     <script src="/scram/scramjet.all.js"></script>
     <script src="/baremux/index.js" defer></script>
     <script src="/epoxy/index.js" defer></script>
@@ -93,7 +89,7 @@
       /* Default WISP_URL if you didn't set it and you're on HTTPS */
       (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
 
-      /* Recompute header height → push iframe below it */
+      /* Recompute header height → push iframe under it (in case tabs wrap) */
       function measureChrome() {
         const el = document.querySelector('.chrome');
         if (!el) return;
@@ -115,17 +111,27 @@
         catch{return (v?.startsWith('https://www.google.com/search?q='))?'Search':(v?.length>24?v.slice(0,24)+'…':(v||'New Tab'));}
       }
 
-      /* Tabs with a single iframe: store URLs per tab, swap iframe.src on switch */
+      /* Tabs with a single iframe: store URLs per tab, swap iframe.src on switch.
+         When no URL is set for the active tab, show the Home page. */
       window.addEventListener('DOMContentLoaded', () => {
         const tabsEl = document.getElementById('tabs');
         const addEl  = document.getElementById('tab-add');
         const form   = document.getElementById('sj-form');
         const addr   = document.getElementById('sj-address');
         const frame  = document.getElementById('sj-frame');
+        const home   = document.getElementById('home');
 
         let tabs = [];        // { id, el, url }
         let active = -1;
         let nextId = 1;
+
+        function updateHomeVisibility() {
+          const showing = !tabs.length || !tabs[active]?.url;
+          home.style.display = showing ? 'block' : 'none';
+          // If no URL, hide iframe; else let runtime show it (we also set display here for UX)
+          if (showing) { frame.removeAttribute('src'); frame.style.display='none'; }
+          measureChrome();
+        }
 
         function setActive(idx){
           if (idx===active || idx<0 || idx>=tabs.length) return;
@@ -135,9 +141,8 @@
 
           const url = tabs[active].url || '';
           if (url) { frame.src = url; frame.style.display='block'; }
-          else { frame.removeAttribute('src'); frame.style.display='none'; }
           addr.placeholder = url ? labelFrom(url) : 'URL or search…';
-          measureChrome(); // in case wrapping changes header height
+          updateHomeVisibility();
         }
 
         function addTab(initialUrl){
@@ -172,6 +177,7 @@
           if (!tabs.length){ addTab(); return; }
           if (wasActive) setActive(Math.max(0, idx-1));
           else if (idx<active) active -= 1;
+          updateHomeVisibility();
         }
 
         addEl.addEventListener('click', ()=>addTab());
@@ -184,16 +190,22 @@
             tabs[active].url = n;
             tabs[active].el.querySelector('.label').textContent = labelFrom(n);
           }
-          // runtime will show iframe; we leave display to it too
+          // Let runtime show iframe after navigation; we also toggle for immediate UX
+          frame.style.display = 'block';
+          home.style.display  = 'none';
         }, true);
 
-        addTab(); // initial tab
+        /* Clicking the big home title opens a new blank tab (optional UX) */
+        document.getElementById('home-title').addEventListener('click', () => addTab());
+
+        addTab(); // initial blank tab (shows Home)
+        updateHomeVisibility();
       });
     </script>
   </head>
 
   <body>
-    <!-- Fixed Chrome -->
+    <!-- Fixed header -->
     <div class="chrome" role="navigation">
       <div class="top">
         <!-- Tabs -->
@@ -201,7 +213,6 @@
           <!-- tabs inserted dynamically -->
           <button id="tab-add" class="tab-add" title="New tab">+</button>
         </div>
-
         <!-- Address bar (keep Scramjet IDs) -->
         <form id="sj-form" class="bar" autocomplete="off">
           <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
@@ -210,18 +221,26 @@
       </div>
     </div>
 
-    <!-- Single iframe sized below the fixed chrome -->
+    <!-- Home page (visible when no URL in active tab) -->
+    <main class="home" id="home" role="main">
+      <h1 class="title" id="home-title">PROJECT TRINITY</h1>
+      <p class="subtitle">Plain black & white. Tabs on top. Just a box that works.</p>
+      <div class="tips">
+        <div>Tip: type a domain (e.g., <code>example.com</code>) or a query to search.</div>
+        <div>New tab: click <strong>+</strong> (top right). Close tab: click <strong>×</strong>.</div>
+      </div>
+      <nav class="links" aria-label="Links">
+        <a href="credits.html">Credits</a><span>·</span>
+        <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Github</a><span>·</span>
+        <a href="https://www.trinity.gt.tc" target="_blank" rel="noopener">TRINITY</a><span>·</span>
+        <span>PT © 2025</span>
+      </nav>
+    </main>
+
+    <!-- Single iframe sized under the fixed header -->
     <iframe id="sj-frame"></iframe>
 
-    <!-- Optional fixed footer chip -->
-    <nav class="links">
-      <a href="credits.html">Credits</a><span>·</span>
-      <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Github</a><span>·</span>
-      <a href="https://www.trinity.gt.tc" target="_blank" rel="noopener">TRINITY</a><span>·</span>
-      <span>PT © 2025</span>
-    </nav>
-
-    <!-- Hooks (hidden) still in DOM if your scripts reference them elsewhere -->
+    <!-- Hooks (kept for your scripts, hidden in CSS) -->
     <p id="sj-error"></p>
     <pre id="sj-error-code"></pre>
   </body>
