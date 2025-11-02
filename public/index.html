@@ -19,9 +19,7 @@
   }
   .row{ display:flex; align-items:center; gap:8px; padding:6px 8px; }
   .row.tabs{
-    border-bottom:1px solid #fff;
-    align-items:flex-end;           /* let tabs sit on the baseline */
-    padding-bottom:0;               /* tighter baseline so corners show */
+    border-bottom:1px solid #fff; align-items:flex-end; padding-bottom:0;
   }
   .tabs-wrap{
     flex:1 1 auto; display:flex; align-items:flex-end; gap:6px;
@@ -29,45 +27,36 @@
   }
   .tabs-wrap::-webkit-scrollbar{ display:none }
 
-  /* ==== TAB FIX ==== */
+  /* Tabs (fixed cutoff issue with margin-bottom:-1px) */
   .tab{
-    position:relative;
-    display:flex; align-items:center; gap:6px;
+    position:relative; display:flex; align-items:center; gap:6px;
     padding:4px 10px;
-    border:1px solid #444;          /* default border */
-    border-bottom-color:transparent; /* let it visually merge into the divider */
-    border-radius:10px 10px 0 0;
-    background:#000;
+    border:1px solid #444; border-bottom-color:transparent;
+    border-radius:10px 10px 0 0; background:#000;
     cursor:pointer; white-space:nowrap; max-width:220px; user-select:none;
-    margin-bottom:-1px;             /* overlap the row’s bottom border (prevents cutoff) */
-    z-index:1;                      /* sit above the row divider */
+    margin-bottom:-1px; z-index:1;
   }
   .tab span.label{ overflow:hidden; text-overflow:ellipsis }
-  .tab.active{
-    border-color:#fff;
-    border-bottom-color:#000;       /* crisp join with the row divider */
-    background:#000;
-    z-index:2;                      /* active tab above others */
-  }
+  .tab.active{ border-color:#fff; border-bottom-color:#000; z-index:2; }
   .tab .close{ cursor:pointer; opacity:.9 }
 
   .tab-add{
     flex:0 0 auto; border:1px solid #fff; border-radius:50%;
     width:26px; height:26px; line-height:24px; text-align:center;
     background:#000; color:#fff; cursor:pointer; font-size:16px;
-    margin-bottom:-1px;             /* align plus button with tab baseline */
+    margin-bottom:-1px;
   }
   .tab-add:hover{ background:#111 }
 
   /* Address row under tabs */
-  .omnibox{
-    flex:1 1 auto; display:flex; align-items:center; gap:8px;
-  }
+  .omnibox{ flex:1 1 auto; display:flex; align-items:center; gap:8px; }
   .btn{
     border:1px solid #fff; background:#000; color:#fff; border-radius:6px;
     height:30px; min-width:30px; padding:0 8px; cursor:pointer;
   }
   .btn:hover{ background:#111 }
+  .btn.toggled{ background:#111; outline:2px solid #fff; }
+
   .reload{ font-weight:700 }
   .bar{
     flex:1 1 auto; display:flex; align-items:center;
@@ -81,7 +70,7 @@
   .bar:focus-within{ outline:2px solid #fff; outline-offset:2px }
 
   /* Home (shown when active tab has no URL) */
-  .home{ padding:24px 18px; max-width:980px; margin:calc(var(--chrome-h) + 20px) auto 16vh; }
+  .home{ padding:24px 18px; max-width:980px; margin:calc(100px + 20px) auto 16vh; }
   .home .title{ margin:0 0 8px; font-size:28px; font-weight:700 }
   .home .subtitle{ margin:0 0 14px; color:#ddd; font-size:12px }
   .links{ margin-top:12px; display:flex; gap:10px; align-items:center; font-size:12px }
@@ -95,37 +84,36 @@
   #sj-frame{
     border:none; position:fixed; left:0; right:0;
     top:var(--chrome-h); height:calc(100vh - var(--chrome-h));
-    width:100vw; background:#000; z-index:9999; display:none; /* runtime may also toggle */
+    width:100vw; background:#000; z-index:9999; display:none;
+  }
+
+  /* Tiny toast for cross-origin warning */
+  .toast{
+    position:fixed; top:8px; right:8px; z-index:10001;
+    background:#000; color:#fff; border:1px solid #fff; border-radius:6px;
+    padding:8px 10px; font-size:12px;
   }
 
   @media (max-width:720px){
-    :root{ --chrome-h:114px } /* rows wrap taller on small screens */
+    :root{ --chrome-h:114px }
     .tab{ max-width:160px }
   }
 </style>
 
-<!-- Runtime/transport (fix paths if not at site root) -->
+<!-- Runtime/transport -->
 <script src="/scram/scramjet.all.js"></script>
 <script src="/baremux/index.js" defer></script>
 <script src="/epoxy/index.js" defer></script>
-
-<!-- Wisp client (safe if unused) -->
 <script src="https://unpkg.com/wisp-js/dist/wisp.min.js" defer></script>
-
 <script src="register-sw.js" defer></script>
 <script src="search.js" defer></script>
 <script src="index.js" defer></script>
 
 <script>
+  /* Default WISP_URL if not set (HTTPS only) */
   (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
 
-  function measureChrome(){
-    const c=document.querySelector('.chrome'); if(!c) return;
-    document.documentElement.style.setProperty('--chrome-h', Math.ceil(c.getBoundingClientRect().height)+'px');
-  }
-  addEventListener('resize',measureChrome);
-  addEventListener('DOMContentLoaded',measureChrome);
-
+  /* Normalize input before your handler runs */
   function normalizeInput(q){
     q=(q||'').trim();
     if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) return 'https://www.google.com/search?q='+encodeURIComponent(q);
@@ -140,15 +128,14 @@
     'github.com':'GitHub','google.com':'Google','openai.com':'OpenAI'
   };
   function titleCaseHost(host){
-    const parts = host.split('.');
-    const core  = parts.slice(-2).join('.');
+    const parts = host.split('.'); const core = parts.slice(-2).join('.');
     if (BRAND_MAP[host]) return BRAND_MAP[host];
     if (BRAND_MAP[core]) return BRAND_MAP[core];
-    const first = (parts[0] || '').replace(/^www$/i,'') || (parts[parts.length-2]||'');
+    const first = (parts[0]||'').replace(/^www$/i,'') || (parts[parts.length-2]||'');
     return first.replace(/[-_]+/g,' ').replace(/\b[a-z]/g, m => m.toUpperCase());
   }
   function labelFrom(urlOrQuery){
-    try { const u = new URL(urlOrQuery); return titleCaseHost(u.hostname); }
+    try { const u=new URL(urlOrQuery); return titleCaseHost(u.hostname); }
     catch {
       if ((urlOrQuery||'').startsWith('https://www.google.com/search?q=')) return 'Search';
       return (urlOrQuery && urlOrQuery.length>24) ? urlOrQuery.slice(0,24)+'…' : (urlOrQuery || 'New Tab');
@@ -156,22 +143,28 @@
   }
 
   addEventListener('DOMContentLoaded',()=>{
-    const tabsWrap = document.getElementById('tabs');
-    const addBtn   = document.getElementById('tab-add');
-    const form     = document.getElementById('sj-form');
-    const addr     = document.getElementById('sj-address');
-    const frame    = document.getElementById('sj-frame');
-    const home     = document.getElementById('home');
-    const reloadBtn= document.getElementById('reload');
+    const tabsWrap=document.getElementById('tabs');
+    const addBtn=document.getElementById('tab-add');
+    const form=document.getElementById('sj-form');
+    const addr=document.getElementById('sj-address');
+    const frame=document.getElementById('sj-frame');
+    const home=document.getElementById('home');
+    const reloadBtn=document.getElementById('reload');
+    const inspectBtn=document.getElementById('inspect');
 
-    let tabs=[]; let active=-1; let nextId=1;
+    let tabs=[]; let active=-1; let nextId=1; let inspectorOn=false;
+
+    function toast(msg){
+      const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
+      document.body.appendChild(t); setTimeout(()=>t.remove(), 2200);
+    }
 
     function updateHome(){
       const show = (!tabs.length || !tabs[active]?.url);
       home.style.display = show ? 'block' : 'none';
       if (show) { frame.removeAttribute('src'); frame.style.display='none'; }
-      measureChrome();
     }
+
     function setActive(idx){
       if (idx===active || idx<0 || idx>=tabs.length) return;
       if (active>=0) tabs[active].el.classList.remove('active');
@@ -189,7 +182,10 @@
         frame.removeAttribute('src'); frame.style.display='none';
       }
       updateHome();
+      // if inspector was on, try to re-inject on the new page
+      if (inspectorOn) enableInspector();
     }
+
     function addTab(initialUrl){
       const id=nextId++;
       const el=document.createElement('div');
@@ -211,6 +207,7 @@
 
       setActive(tabs.length-1);
     }
+
     function closeTabById(id){
       const idx=tabs.findIndex(t=>t.id===id);
       if (idx===-1) return;
@@ -241,6 +238,158 @@
       }
     });
 
+    // ===== INSPECTOR =====
+    function disableInspector(){
+      try{
+        const w = frame.contentWindow; const d = w.document;
+        d.querySelector('#__mini_inspector_overlay__')?.remove();
+        d.querySelector('#__mini_inspector_panel__')?.remove();
+        d.removeEventListener('mousemove', w.__mini_inspector_move, true);
+        d.removeEventListener('click', w.__mini_inspector_click, true);
+        d.removeEventListener('keydown', w.__mini_inspector_key, true);
+        w.__mini_inspector_move = w.__mini_inspector_click = w.__mini_inspector_key = null;
+      }catch(_){}
+      inspectorOn=false; inspectBtn.classList.remove('toggled');
+    }
+
+    function enableInspector(){
+      // cross-origin guard
+      try { void frame.contentDocument; } 
+      catch { toast("Can't inspect this page (cross-origin)."); disableInspector(); return; }
+
+      const w = frame.contentWindow;
+      const d = w.document;
+
+      // if already injected, just turn it on
+      if (d.getElementById('__mini_inspector_overlay__')) { inspectorOn=true; inspectBtn.classList.add('toggled'); return; }
+
+      // overlay
+      const overlay = d.createElement('div');
+      overlay.id='__mini_inspector_overlay__';
+      overlay.style.cssText = 'position:fixed;pointer-events:none;border:1px solid #fff;outline:9999px solid rgba(0,0,0,0.4);z-index:2147483646;left:0;top:0;width:0;height:0;';
+
+      // info tooltip
+      const info = d.createElement('div');
+      info.style.cssText='position:fixed;pointer-events:none;z-index:2147483647;background:#000;color:#fff;border:1px solid #fff;border-radius:4px;padding:2px 6px;font:12px "Courier New",monospace;transform:translateY(-22px);';
+      overlay.appendChild(info);
+
+      // editor panel
+      const panel = d.createElement('div');
+      panel.id='__mini_inspector_panel__';
+      panel.style.cssText='position:fixed;right:8px;bottom:8px;z-index:2147483647;background:#000;color:#fff;border:1px solid #fff;border-radius:6px;padding:8px;max-width:48vw;min-width:280px;font:12px "Courier New",monospace;';
+      panel.innerHTML = `
+        <div style="margin-bottom:6px">Mini Inspector — <button id="__mi_close__" style="background:#000;color:#fff;border:1px solid #fff;border-radius:4px;padding:2px 6px;cursor:pointer">Close (Esc)</button></div>
+        <div style="margin-bottom:4px">Selected: <code id="__mi_sel__"></code></div>
+        <label>textContent</label>
+        <textarea id="__mi_text__" style="width:100%;height:64px;background:#000;color:#fff;border:1px solid #fff;border-radius:4px;margin:4px 0 8px;resize:vertical;"></textarea>
+        <label>outerHTML</label>
+        <textarea id="__mi_html__" style="width:100%;height:140px;background:#000;color:#fff;border:1px solid #fff;border-radius:4px;margin:4px 0 8px;resize:vertical;"></textarea>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button id="__mi_apply__"  style="background:#000;color:#fff;border:1px solid #fff;border-radius:4px;padding:4px 8px;cursor:pointer">Apply HTML</button>
+          <button id="__mi_textbtn__"style="background:#000;color:#fff;border:1px solid #fff;border-radius:4px;padding:4px 8px;cursor:pointer">Apply Text</button>
+          <button id="__mi_delete__" style="background:#000;color:#fff;border:1px solid #fff;border-radius:4px;padding:4px 8px;cursor:pointer">Delete Node</button>
+        </div>
+      `;
+
+      d.body.appendChild(overlay);
+      d.body.appendChild(panel);
+
+      let current = null;
+
+      function fmt(el){
+        if(!el) return '';
+        const tag = el.tagName.toLowerCase();
+        const id  = el.id ? `#${el.id}` : '';
+        const cls = (el.className && typeof el.className === 'string') ? '.' + el.className.trim().split(/\s+/).join('.') : '';
+        return `${tag}${id}${cls}`;
+      }
+
+      w.__mini_inspector_move = function(ev){
+        if (!ev.target || ev.target===overlay || ev.target===panel || panel.contains(ev.target)) return;
+        const el = ev.target;
+        if (!el.getBoundingClientRect) return;
+        const r = el.getBoundingClientRect();
+        overlay.style.left = r.left+'px';
+        overlay.style.top  = r.top +'px';
+        overlay.style.width  = r.width +'px';
+        overlay.style.height = r.height+'px';
+        info.textContent = fmt(el) + `  ${Math.round(r.width)}×${Math.round(r.height)}`;
+        info.style.left = Math.max(4, Math.min(r.left, d.documentElement.clientWidth - 200)) + 'px';
+        info.style.top  = (r.top - 6) + 'px';
+      };
+
+      w.__mini_inspector_click = function(ev){
+        if (panel.contains(ev.target)) return; // clicks inside panel are allowed
+        ev.preventDefault(); ev.stopPropagation();
+        current = ev.target;
+        d.getElementById('__mi_sel__').textContent = fmt(current);
+        d.getElementById('__mi_text__').value = current.textContent;
+        try { d.getElementById('__mi_html__').value = current.outerHTML; } catch { d.getElementById('__mi_html__').value = '<!-- cannot serialize -->'; }
+      };
+
+      w.__mini_inspector_key = function(ev){
+        if (ev.key === 'Escape') { // ESC exits inspector
+          ev.preventDefault(); ev.stopPropagation();
+          parent.postMessage({__mini_inspector_cmd:'off'}, '*');
+        }
+      };
+
+      d.addEventListener('mousemove', w.__mini_inspector_move, true);
+      d.addEventListener('click',     w.__mini_inspector_click, true);
+      d.addEventListener('keydown',   w.__mini_inspector_key, true);
+
+      // Panel buttons
+      panel.querySelector('#__mi_close__').onclick = ()=> parent.postMessage({__mini_inspector_cmd:'off'}, '*');
+      panel.querySelector('#__mi_apply__').onclick = ()=>{
+        if (!current) return;
+        const html = d.getElementById('__mi_html__').value;
+        try{
+          const tmp = d.createElement('div'); tmp.innerHTML = html;
+          const repl = tmp.firstElementChild;
+          if (!repl) return;
+          current.replaceWith(repl);
+          current = repl;
+          d.getElementById('__mi_sel__').textContent = fmt(current);
+        }catch(e){ alert('Invalid HTML'); }
+      };
+      panel.querySelector('#__mi_textbtn__').onclick = ()=>{
+        if (!current) return;
+        current.textContent = d.getElementById('__mi_text__').value;
+        d.getElementById('__mi_html__').value = current.outerHTML;
+      };
+      panel.querySelector('#__mi_delete__').onclick = ()=>{
+        if (!current) return;
+        const nxt = current.parentElement || d.body;
+        current.remove();
+        current = nxt;
+        d.getElementById('__mi_sel__').textContent = fmt(current);
+        try { d.getElementById('__mi_html__').value = current.outerHTML || ''; } catch { d.getElementById('__mi_html__').value=''; }
+        d.getElementById('__mi_text__').value = current.textContent || '';
+      };
+
+      // listen for parent toggle-off
+      w.addEventListener('message', (e)=>{
+        if (e.data && e.data.__mini_inspector_cmd==='off') {
+          d.removeEventListener('mousemove', w.__mini_inspector_move, true);
+          d.removeEventListener('click',     w.__mini_inspector_click, true);
+          d.removeEventListener('keydown',   w.__mini_inspector_key, true);
+          overlay.remove(); panel.remove();
+        }
+      });
+
+      inspectorOn=true; inspectBtn.classList.add('toggled');
+    }
+
+    inspectBtn.addEventListener('click', ()=>{
+      if (inspectorOn) {
+        // tell child to remove UI, then clean parent state
+        try { frame.contentWindow.postMessage({__mini_inspector_cmd:'off'}, '*'); } catch(_){}
+        disableInspector();
+      } else {
+        enableInspector();
+      }
+    });
+
     // Normalize BEFORE your existing submit handler; remember URL per tab
     form.addEventListener('submit',()=>{
       const n = normalizeInput(addr.value);
@@ -251,8 +400,11 @@
       }
       frame.style.display = 'block';
       home.style.display  = 'none';
+      // If inspector is on, re-inject after navigation
+      setTimeout(()=>{ if (inspectorOn) enableInspector(); }, 400);
     }, true);
 
+    // Initial tab
     addTab(); updateHome();
   });
 </script>
@@ -271,7 +423,8 @@
     <!-- Row 2: Address (omnibox) under the tabs -->
     <div class="row">
       <div class="omnibox">
-        <button id="reload" class="btn reload" title="Reload">↻</button>
+        <button id="reload"  class="btn reload"  title="Reload">↻</button>
+        <button id="inspect" class="btn"         title="Inspect (toggle)">Inspect</button>
         <form id="sj-form" class="bar" autocomplete="off" role="search" style="margin:0;">
           <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
           <input id="sj-address" type="text" placeholder="URL or search…" spellcheck="false" inputmode="url" />
@@ -283,7 +436,7 @@
   <!-- Home (visible when active tab has no URL) -->
   <main class="home" id="home">
     <h1 class="title">PROJECT TRINITY</h1>
-    <p class="subtitle">Black & white. Chrome-style tabs & omnibox. Just a box that works.</p>
+    <p class="subtitle">Black & white. Chrome-style tabs & omnibox. Inspect toggle when same-origin.</p>
     <div class="links">
       <a href="credits.html">Credits</a><span>·</span>
       <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Github</a><span>·</span>
