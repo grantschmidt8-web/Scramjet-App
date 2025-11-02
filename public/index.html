@@ -8,7 +8,6 @@
 
 <style>
   :root{
-    /* Fixed DARK theme tokens (light removed) */
     --fg:#e6e6e6; --fg-dim:#bdbdbd; --bg:#0a0a0a;
     --grad-1:#0a0a0a; --grad-2:#0d0d0d; --grad-3:#121212;
     --stroke:#262626; --accent:#8a8a8a; --chrome-h:96px; --radius:14px; --tab-h:34px;
@@ -19,8 +18,8 @@
     margin:0; color:var(--fg);
     font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans";
     background:
-      radial-gradient(1100px 520px at 80% -10%, rgba(140,140,140,.10) 0%, rgba(140,140,140,0) 60%),
-      radial-gradient(900px 480px at -10% 110%, rgba(160,160,160,.08) 0%, rgba(160,160,160,0) 60%),
+      radial-gradient(1100px 520px at 80% -10%, rgba(140,140,140,.10) 0%, rgba(0,0,0,0) 60%),
+      radial-gradient(900px 480px at -10% 110%, rgba(160,160,160,.08) 0%, rgba(0,0,0,0) 60%),
       linear-gradient(180deg, var(--grad-1) 0%, var(--grad-2) 55%, var(--grad-3) 100%);
   }
 
@@ -68,6 +67,19 @@
   .tab-add{ flex:0 0 auto; max-width:none; gap:6px; font-weight:700; letter-spacing:.4px; }
   .tab-add::before{ content:"+"; display:inline-block; line-height:1; font-size:16px; color:var(--fg); transform: translateY(-1px); }
 
+  /* ===== Gradient strip in header (top-right) ===== */
+  .grad-strip{
+    flex:0 0 auto; display:flex; align-items:flex-end; gap:6px; padding:0 0 4px 6px;
+    border-left:1px solid var(--stroke); margin-left:6px;
+  }
+  .swatch-small{
+    width:56px; height:18px; border-radius:9px; border:2px solid var(--stroke);
+    cursor:pointer; box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+    transition:border-color .12s ease, box-shadow .12s ease, transform .12s ease;
+  }
+  .swatch-small:hover{ border-color:var(--accent); box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 6px 18px rgba(0,0,0,.25); transform: translateY(-1px); }
+  .swatch-small[data-active="1"]{ border-color:var(--accent); box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 10px 26px rgba(0,0,0,.35); }
+
   .omnibox{ flex:1 1 auto; display:flex; align-items:center; gap:10px; padding:6px 12px; min-width:0; }
   .btn{
     border:1px solid var(--stroke);
@@ -90,18 +102,13 @@
     box-shadow:inset 0 1px 0 rgba(255,255,255,.03), 0 6px 18px rgba(0,0,0,.45);
   }
 
-  /* Address input = dark theme */
   #sj-address{
     all:unset;
-    color:var(--fg);
-    -webkit-text-fill-color:var(--fg);
-    caret-color:var(--fg);
-    width:100%;
-    font:14px/1.3 system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
+    color:var(--fg); -webkit-text-fill-color:var(--fg); caret-color:var(--fg);
+    width:100%; font:14px/1.3 system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   }
   #sj-address::placeholder{ color:var(--fg-dim); opacity:.85; }
 
-  /* Suggestions */
   .sugg-wrap{ position:relative; flex:1 1 auto; min-width:160px; }
   #omnibox-suggestions{
     position:absolute; left:0; right:0; top:calc(100% + 6px);
@@ -126,7 +133,6 @@
     background:linear-gradient(180deg, rgba(34,34,34,.96), rgba(22,22,22,.92));
   }
 
-  /* Home */
   .home{ max-width:980px; margin:calc(var(--chrome-h) + 28px) auto 18vh; padding:0 18px; }
   html[data-collapsed="1"] .home{ margin:28px auto 18vh; }
   .hero{ padding:24px; border:1px solid var(--stroke); border-radius:var(--radius);
@@ -147,7 +153,6 @@
   }
   html[data-collapsed="1"] #sj-frame{ top:0; height:100vh; }
 
-  /* Collapse FAB */
   .fab{
     position:fixed; top:10px; right:12px; z-index:10005;
     border:1px solid var(--stroke);
@@ -158,25 +163,6 @@
     cursor:pointer;
   }
   html[data-collapsed="1"] #chrome-fab{ display:flex; }
-
-  /* Settings pop (dark-only, more gradients) */
-  .settings-pop{
-    position:fixed; z-index:10004; display:none;
-    border:1px solid var(--stroke); border-radius:12px; padding:12px;
-    background:linear-gradient(180deg, rgba(24,24,24,.98), rgba(16,16,16,.94));
-    box-shadow:var(--shadow); color:var(--fg); width:min(520px, calc(100vw - 20px));
-  }
-  .settings-pop h4{ margin:0 0 8px; font-size:14px; }
-  .settings-group{ margin-bottom:10px; }
-  .settings-row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  .swatch{
-    width:84px; height:40px; border-radius:10px; border:2px solid var(--stroke);
-    cursor:pointer; position:relative; box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
-    transition:border-color .12s ease, box-shadow .12s ease, transform .12s ease;
-  }
-  .swatch:hover{ border-color: var(--accent); box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 6px 18px rgba(0,0,0,.35); transform: translateY(-1px); }
-  .swatch[data-active="1"]{ border-color: var(--accent); box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 10px 26px rgba(0,0,0,.45); }
-  .swatch[data-active="1"]::after{ content:"✓"; position:absolute; right:8px; bottom:6px; font-size:14px; opacity:.9; }
 </style>
 
 <!-- Runtime/transport -->
@@ -189,16 +175,12 @@
 <script src="index.js" defer></script>
 
 <script>
-  /* Force WISP default over HTTPS */
   (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
 
-  /* === Storage keys (dark-only) === */
   const LS_KEY_COLLAPSE = 'pt_chrome_collapsed';
-  const LS_KEY_GRAD     = 'pt_gradient_dark';   // single key now
+  const LS_KEY_GRAD     = 'pt_gradient_dark';
 
-  /* === Favicon fallbacks (dark only) === */
   const DARK_FAV = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#222222"/><path d="M6 12h12M12 6v12" stroke="#bdbdbd" stroke-width="1.7" stroke-linecap="round"/></svg>');
-  const DEF_FAV  = () => DARK_FAV;
 
   function proxAsset(u){ try { return location.origin + '/scramjet/' + encodeURIComponent(u); } catch { return u; } }
   function favCandidates(urlOrHost){
@@ -227,7 +209,7 @@
     next();
   }
 
-  /* === Dark gradients (12) === */
+  /* Dark gradients (12) */
   const GRADS = {
     graphite:{ sw:['#0a0a0a','#0d0d0d','#121212'] },
     abyss:   { sw:['#0a0f1a','#0b1320','#0c1726'] },
@@ -249,46 +231,16 @@
     document.documentElement.style.setProperty('--grad-3', g.sw[2]);
   }
   function buildBodyBackground(){
-    const g1 = getComputedStyle(document.documentElement).getPropertyValue('--grad-1').trim() || '#0a0a0a';
-    const g2 = getComputedStyle(document.documentElement).getPropertyValue('--grad-2').trim() || '#0d0d0d';
-    const g3 = getComputedStyle(document.documentElement).getPropertyValue('--grad-3').trim() || '#121212';
+    const get = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
     return [
       `radial-gradient(1100px 520px at 80% -10%, rgba(140,140,140,.10) 0%, rgba(0,0,0,0) 60%)`,
       `radial-gradient(900px 480px at -10% 110%, rgba(160,160,160,.08) 0%, rgba(0,0,0,0) 60%)`,
-      `linear-gradient(180deg, ${g1} 0%, ${g2} 55%, ${g3} 100%)`
+      `linear-gradient(180deg, ${get('--grad-1')} 0%, ${get('--grad-2')} 55%, ${get('--grad-3')} 100%)`
     ].join(', ');
   }
   function applyDarkTheme(){
-    // Colors are already dark; just repaint dependent surfaces.
-    document.body.style.color = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
     document.body.style.background = buildBodyBackground();
     document.querySelector('.chrome')?.style.setProperty('background','linear-gradient(180deg, rgba(18,18,18,.82), rgba(12,12,12,.68))');
-    document.querySelectorAll('.hero').forEach(n=>n.style.setProperty('background','linear-gradient(180deg, rgba(22,22,22,.78), rgba(14,14,14,.72))'));
-    document.querySelectorAll('.bar').forEach(n=>n.style.setProperty('background','linear-gradient(180deg, rgba(24,24,24,.92), rgba(16,16,16,.9))'));
-    document.querySelectorAll('.btn').forEach(n=>n.style.setProperty('background','linear-gradient(180deg, rgba(26,26,26,.95), rgba(18,18,18,.9))'));
-    document.querySelectorAll('.tab').forEach(n=>n.style.setProperty('background','linear-gradient(180deg, rgba(28,28,28,.92), rgba(18,18,18,.88))'));
-    document.querySelectorAll('.tab.active').forEach(n=>n.style.setProperty('background','linear-gradient(180deg, rgba(32,32,32,.96), rgba(20,20,20,.92))'));
-    document.getElementById('sj-frame')?.style.setProperty('background','#0b0b0b');
-
-    // Force address repaint
-    const addrEl = document.getElementById('sj-address');
-    if (addrEl) {
-      const fg = getComputedStyle(document.documentElement).getPropertyValue('--fg').trim();
-      addrEl.style.webkitTextFillColor = fg;
-      addrEl.style.caretColor = fg;
-    }
-
-    // Default icons (tabs/header/suggestions) stay dark
-    const headerFav = document.getElementById('site-favicon');
-    if (headerFav && (!headerFav.src || headerFav.src === DARK_FAV)) headerFav.src = DARK_FAV;
-    document.querySelectorAll('.tab .fav').forEach(img=>{
-      if (!img.getAttribute('data-has-real') && (!img.src || img.src===DARK_FAV)) img.src = DARK_FAV;
-    });
-    document.querySelectorAll('#omnibox-suggestions li').forEach(li=>{
-      if (li.dataset.hasHostIcon !== '1') {
-        const img = li.querySelector('img.fav'); if (img) img.src = DARK_FAV;
-      }
-    });
   }
 
   function measureChrome(){
@@ -327,12 +279,9 @@
   addEventListener('resize',measureChrome);
 
   addEventListener('DOMContentLoaded',()=>{
-    // Init dark gradient
     if (!localStorage.getItem(LS_KEY_GRAD)) localStorage.setItem(LS_KEY_GRAD,'graphite');
-    setGradientVars(localStorage.getItem(LS_KEY_GRAD));
-    applyDarkTheme();
+    setGradientVars(localStorage.getItem(LS_KEY_GRAD)); applyDarkTheme();
 
-    // Restore collapse
     setCollapsed(localStorage.getItem(LS_KEY_COLLAPSE) === '1');
 
     const tabsWrap   = document.getElementById('tabs');
@@ -344,8 +293,6 @@
     const reloadBtn  = document.getElementById('reload');
     const inspectBtn = document.getElementById('inspect');
     const headerFav  = document.getElementById('site-favicon');
-    const settingsBtn= document.getElementById('settings');
-    const settingsPop= document.getElementById('settings-pop');
     const toggleBtn  = document.getElementById('chrome-toggle');
     const fabBtn     = document.getElementById('chrome-fab');
 
@@ -512,45 +459,153 @@
     frame.addEventListener('load', ()=>setTimeout(updateTabMetaFromFrame, 150));
     setInterval(updateTabMetaFromFrame, 900);
 
-    /* Inspector stub (kept minimal) */
-    function disableInspector(){ inspectorOn=false; document.getElementById('inspect')?.classList.remove('toggled'); }
-    function enableInspector(){ try { void frame.contentDocument; } catch { disableInspector(); return; } /* plug your overlay if you want */ }
-    inspectBtn.addEventListener('click', ()=>{ if (inspectorOn){ try { frame.contentWindow.postMessage({__mini_inspector_cmd:'off'}, '*'); } catch(_){} disableInspector(); } else { enableInspector(); } });
-
-    /* Settings pop (dark-only gradients) */
-    function openSettingsAtButton(btn){
-      const curGrad = localStorage.getItem(LS_KEY_GRAD) || 'graphite';
-      document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el.dataset.value===curGrad?'1':'0'); });
-      const r = btn.getBoundingClientRect(); const margin = 8;
-      settingsPop.style.display = 'block'; const popW = settingsPop.offsetWidth || 420; settingsPop.style.display = 'none';
-      const left = Math.max(10, Math.min(window.innerWidth - popW - 10, r.left + r.width - popW));
-      settingsPop.style.left = left + 'px'; settingsPop.style.top  = (r.bottom + margin) + 'px'; settingsPop.style.display = 'block';
-      const onDocClick = (e)=>{ if (!settingsPop.contains(e.target) && e.target !== btn) { settingsPop.style.display='none'; document.removeEventListener('mousedown', onDocClick, true); document.removeEventListener('keydown', onEsc, true); } };
-      const onEsc = (e)=>{ if (e.key==='Escape'){ settingsPop.style.display='none'; document.removeEventListener('mousedown', onDocClick, true); document.removeEventListener('keydown', onEsc, true);} };
-      setTimeout(()=>{ document.addEventListener('mousedown', onDocClick, true); document.addEventListener('keydown', onEsc, true); },0);
+    /* -------- Robust INSPECTOR (toggle + re-inject on load) -------- */
+    function toast(msg){
+      const t=document.createElement('div');
+      t.style.cssText='position:fixed;top:10px;right:10px;z-index:10001;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(18,18,18,.96);color:#e6e6e6;font:12px/1.2 system-ui;box-shadow:0 10px 26px rgba(0,0,0,.55)';
+      t.textContent=msg; document.body.appendChild(t);
+      setTimeout(()=>t.remove(),2200);
     }
-    settingsBtn.addEventListener('click', ()=> openSettingsAtButton(settingsBtn));
-    document.querySelectorAll('.swatch').forEach(sw=>{
-      sw.addEventListener('click', ()=>{
-        const val = sw.dataset.value; if (!GRADS[val]) return;
-        setGradientVars(val);
-        localStorage.setItem(LS_KEY_GRAD, val);
-        document.body.style.background = buildBodyBackground();
-        document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el===sw?'1':'0'); });
-      });
-    });
+    function canAccess(){ try { return !!(frame && frame.contentDocument && frame.contentDocument.documentElement); } catch { return false; } }
+    function disableInspector(){
+      if (!canAccess()) { inspectorOn=false; inspectBtn?.classList.remove('toggled'); return; }
+      const w = frame.contentWindow, d = w.document;
+      try {
+        d.querySelector('#__mi_overlay__')?.remove();
+        d.querySelector('#__mi_panel__')?.remove();
+        d.removeEventListener('mousemove', w.__mi_move, true);
+        d.removeEventListener('click',     w.__mi_click, true);
+        d.removeEventListener('keydown',   w.__mi_key, true);
+        w.__mi_move = w.__mi_click = w.__mi_key = null;
+      } catch {}
+      inspectorOn=false; inspectBtn?.classList.remove('toggled');
+    }
+    function enableInspector(){
+      if (!canAccess()) { inspectorOn=false; inspectBtn?.classList.remove('toggled'); toast("Can't inspect this page (not same-origin)."); return; }
+      const w = frame.contentWindow, d = w.document;
+      if (d.getElementById('__mi_overlay__')) { inspectorOn=true; inspectBtn?.classList.add('toggled'); return; }
 
-    /* Collapse controls */
-    toggleBtn.addEventListener('click', ()=>{
-      const want = !(document.documentElement.dataset.collapsed === '1');
-      setCollapsed(want);
+      const overlay = d.createElement('div');
+      overlay.id='__mi_overlay__';
+      overlay.style.cssText='position:fixed;pointer-events:none;border:1px solid rgba(180,180,180,.9);outline:9999px solid rgba(0,0,0,.50);border-radius:8px;z-index:2147483646;left:0;top:0;width:0;height:0;box-shadow:0 0 0 1px rgba(255,255,255,.04) inset';
+      const info = d.createElement('div');
+      info.style.cssText='position:fixed;pointer-events:none;z-index:2147483647;background:rgba(22,22,22,.96);color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:8px;padding:4px 8px;font:12px "Courier New",monospace;transform:translateY(-26px);box-shadow:0 8px 20px rgba(0,0,0,.55)';
+      overlay.appendChild(info);
+
+      const panel = d.createElement('div');
+      panel.id='__mi_panel__';
+      panel.style.cssText='position:fixed;right:12px;bottom:12px;z-index:2147483647;color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:14px;padding:10px;max-width:48vw;min-width:300px;font:12px "Courier New",monospace;background:linear-gradient(180deg, rgba(24,24,24,.98), rgba(16,16,16,.94));box-shadow:0 16px 40px rgba(0,0,0,.65)';
+      panel.innerHTML = `
+        <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <strong>Inspector</strong>
+          <button id="__mi_close__" style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:8px;padding:4px 8px;cursor:pointer">Close</button>
+        </div>
+        <div style="margin-bottom:6px">Selected: <code id="__mi_sel__"></code></div>
+        <label>textContent</label>
+        <textarea id="__mi_text__" style="width:100%;height:70px;background:rgba(18,18,18,.96);color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:10px;margin:4px 0 8px;resize:vertical;"></textarea>
+        <label>outerHTML</label>
+        <textarea id="__mi_html__" style="width:100%;height:150px;background:rgba(18,18,18,.96);color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:10px;margin:4px 0 10px;resize:vertical;"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="__mi_apply__"  style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Apply HTML</button>
+          <button id="__mi_textbtn__"style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Apply Text</button>
+          <button id="__mi_delete__" style="background:transparent;color:#ff8f8f;border:1px solid rgba(255,143,143,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Delete Node</button>
+        </div>
+      `;
+      d.body.appendChild(overlay); d.body.appendChild(panel);
+
+      let current=null;
+      function fmt(el){
+        if(!el) return '';
+        const tag=el.tagName?.toLowerCase?.()||'';
+        const id=el.id?`#${el.id}`:'';
+        const cls=(el.className && typeof el.className==='string')?'.'+el.className.trim().split(/\s+/).join('.'):'';
+        return `${tag}${id}${cls}`;
+      }
+      w.__mi_move = function(ev){
+        if (!ev.target || ev.target===overlay || ev.target===panel || panel.contains(ev.target)) return;
+        const el=ev.target, r=el.getBoundingClientRect?.(); if(!r) return;
+        overlay.style.left=r.left+'px'; overlay.style.top=r.top+'px'; overlay.style.width=r.width+'px'; overlay.style.height=r.height+'px';
+        info.textContent = fmt(el) + `  ${Math.round(r.width)}×${Math.round(r.height)}`;
+        info.style.left = Math.max(6, Math.min(r.left, d.documentElement.clientWidth - 260)) + 'px';
+        info.style.top  = (r.top - 8) + 'px';
+      };
+      w.__mi_click = function(ev){
+        if (panel.contains(ev.target)) return;
+        ev.preventDefault(); ev.stopPropagation();
+        current = ev.target;
+        d.getElementById('__mi_sel__').textContent = fmt(current);
+        d.getElementById('__mi_text__').value = current.textContent ?? '';
+        try { d.getElementById('__mi_html__').value = current.outerHTML ?? ''; }
+        catch { d.getElementById('__mi_html__').value='<!-- cannot serialize -->'; }
+      };
+      w.__mi_key = function(ev){
+        if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); disableInspector(); }
+      };
+      d.addEventListener('mousemove', w.__mi_move, true);
+      d.addEventListener('click',     w.__mi_click, true);
+      d.addEventListener('keydown',   w.__mi_key,  true);
+      panel.querySelector('#__mi_close__').onclick = ()=> disableInspector();
+      panel.querySelector('#__mi_apply__').onclick = ()=>{
+        if (!current) return;
+        const html = d.getElementById('__mi_html__').value;
+        try{
+          const tmp = d.createElement('div'); tmp.innerHTML = html;
+          const repl = tmp.firstElementChild; if (!repl) return;
+          current.replaceWith(repl); current = repl;
+          d.getElementById('__mi_sel__').textContent = fmt(current);
+          d.getElementById('__mi_text__').value = current.textContent ?? '';
+        }catch{ alert('Invalid HTML'); }
+      };
+      panel.querySelector('#__mi_textbtn__').onclick = ()=>{
+        if (!current) return;
+        current.textContent = d.getElementById('__mi_text__').value;
+        try { d.getElementById('__mi_html__').value = current.outerHTML ?? ''; } catch {}
+      };
+      panel.querySelector('#__mi_delete__').onclick = ()=>{
+        if (!current) return;
+        const nxt = current.parentElement || d.body;
+        current.remove(); current = nxt;
+        d.getElementById('__mi_sel__').textContent = fmt(current);
+        try { d.getElementById('__mi_html__').value = current.outerHTML || ''; } catch { d.getElementById('__mi_html__').value=''; }
+        d.getElementById('__mi_text__').value = current.textContent || '';
+      };
+
+      inspectorOn=true; inspectBtn?.classList.add('toggled');
+    }
+    inspectBtn.addEventListener('click', ()=>{ if (inspectorOn) disableInspector(); else enableInspector(); });
+    window.addEventListener('keydown', (e)=>{
+      if ((e.ctrlKey||e.metaKey) && e.shiftKey && (e.key==='I' || e.key==='i')){
+        e.preventDefault(); if (inspectorOn) disableInspector(); else enableInspector();
+      }
     });
+    frame.addEventListener('load', ()=>{ if (inspectorOn){ disableInspector(); setTimeout(()=>enableInspector(),60); } });
+
+    /* -------- Collapse controls -------- */
+    toggleBtn.addEventListener('click', ()=> setCollapsed(!(document.documentElement.dataset.collapsed === '1')) );
     fabBtn.addEventListener('click', ()=> setCollapsed(false));
 
-    /* Init */
-    addTab(); updateHome(); measureChrome();
+    /* -------- Gradient strip in header -------- */
+    (function buildGradStrip(){
+      const strip = document.getElementById('grad-strip');
+      if (!strip) return;
+      const cur = localStorage.getItem(LS_KEY_GRAD) || 'graphite';
+      Object.entries(GRADS).forEach(([key,def])=>{
+        const sw = document.createElement('button');
+        sw.type='button'; sw.className='swatch-small'; sw.dataset.value = key;
+        if (key===cur) sw.dataset.active='1';
+        sw.style.background = `linear-gradient(180deg, ${def.sw[0]}, ${def.sw[1]} 55%, ${def.sw[2]})`;
+        sw.title = key[0].toUpperCase()+key.slice(1);
+        sw.addEventListener('click', ()=>{
+          localStorage.setItem(LS_KEY_GRAD, key);
+          document.querySelectorAll('.swatch-small').forEach(el=>el.dataset.active='0');
+          sw.dataset.active='1';
+          setGradientVars(key); applyDarkTheme();
+        });
+        strip.appendChild(sw);
+      });
+    })();
 
-    /* ---------- Suggestions (local + Google via Scramjet) ---------- */
+    /* -------- Suggestions (local + Google via Scramjet) -------- */
     const suggEl = document.getElementById('omnibox-suggestions');
     const LS_HISTORY = 'pt_history_urls';
 
@@ -573,7 +628,7 @@
       localStorage.setItem(LS_HISTORY, JSON.stringify(list));
     }
     const __oldGo = window.go;
-    window.go = function(raw){ __oldGo.call(this, raw); try { const n = normalizeInput((raw||'').trim()); saveHistory(n); } catch {} };
+    window.go = function(raw){ __oldGo.call(this, raw); try { const n = (raw||'').trim(); if (n) saveHistory(n); } catch {} };
 
     function currentEngine(){ return document.getElementById('sj-search-engine')?.value || 'https://www.google.com/search?q=%s'; }
     let lastRemoteQ='', lastRemoteOut=[];
@@ -651,11 +706,12 @@
       return out;
     }
 
+    const suggEl2 = document.getElementById('omnibox-suggestions'); // alias to avoid shadowing
     let activeIndex = -1, currentItems = [];
     function render(list){
       currentItems = list; activeIndex = -1;
-      suggEl.innerHTML = '';
-      if (!list.length){ suggEl.style.display='none'; return; }
+      suggEl2.innerHTML = '';
+      if (!list.length){ suggEl2.style.display='none'; return; }
       for (let i=0;i<list.length;i++){
         const it = list[i];
         const li = document.createElement('li');
@@ -667,9 +723,6 @@
 
         if (it.hostForIcon){
           loadFaviconInto(img, favCandidates(it.hostForIcon), DARK_FAV);
-          li.dataset.hasHostIcon = "1";
-        } else if (it.iconUrl){
-          loadFaviconInto(img, [proxAsset(it.iconUrl)], DARK_FAV);
           li.dataset.hasHostIcon = "1";
         } else {
           img.src = DARK_FAV;
@@ -683,16 +736,15 @@
         li.addEventListener('mouseenter', ()=>select(i));
         li.addEventListener('mousedown', (e)=>{ e.preventDefault(); });
         li.addEventListener('click', ()=>apply(i));
-        suggEl.appendChild(li);
+        suggEl2.appendChild(li);
       }
-      suggEl.style.display='block';
+      suggEl2.style.display='block';
     }
     function select(i){
-      const items = [...suggEl.querySelectorAll('li')];
+      const items = [...suggEl2.querySelectorAll('li')];
       items.forEach(n=>n.setAttribute('aria-selected','false'));
       if (i>=0 && i<items.length){
         items[i].setAttribute('aria-selected','true');
-        activeIndex = i;
         try { addr.value = decodeURIComponent(currentItems[i].value); } catch { addr.value = currentItems[i].value; }
         addr.setSelectionRange(addr.value.length, addr.value.length);
       }
@@ -700,7 +752,7 @@
     function apply(i){
       if (i<0 || i>=currentItems.length) return;
       const val = currentItems[i].value;
-      suggEl.style.display='none';
+      suggEl2.style.display='none';
       addr.value = val;
       form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}));
     }
@@ -719,34 +771,36 @@
 
     addr.addEventListener('input', ()=>{ refresh(addr.value||''); });
     addr.addEventListener('focus', ()=>{ refresh(addr.value||''); });
-
     addr.addEventListener('keydown', (e)=>{
-      const items = [...suggEl.querySelectorAll('li')];
+      const items = [...suggEl2.querySelectorAll('li')];
       if (!items.length) return;
       if (e.key === 'ArrowDown'){ e.preventDefault(); select( Math.min(items.length-1, activeIndex+1) ); }
       else if (e.key === 'ArrowUp'){ e.preventDefault(); select( Math.max(0, activeIndex-1) ); }
       else if (e.key === 'Enter'){ if (activeIndex>=0){ e.preventDefault(); apply(activeIndex); } }
       else if (e.key === 'Tab'){ if (activeIndex>=0){ e.preventDefault(); apply(activeIndex); } }
-      else if (e.key === 'Escape'){ suggEl.style.display='none'; }
+      else if (e.key === 'Escape'){ suggEl2.style.display='none'; }
     });
-    addr.addEventListener('blur', ()=> setTimeout(()=>{ suggEl.style.display='none'; }, 120) );
+    addr.addEventListener('blur', ()=> setTimeout(()=>{ suggEl2.style.display='none'; }, 120) );
+
+    /* Init UI */
+    addTab(); updateHome(); measureChrome();
   });
 </script>
 </head>
 
 <body>
-  <!-- Header -->
   <div class="chrome" role="navigation" aria-label="Browser controls">
     <div class="row tabs">
       <div class="tabs-wrap" id="tabs" role="tablist" aria-label="Tabs">
+        <!-- tabs inserted dynamically -->
         <button id="tab-add" class="tab-add" title="New tab"></button>
       </div>
+      <div class="grad-strip" id="grad-strip" aria-label="Theme gradients"></div>
     </div>
     <div class="row">
       <div class="omnibox">
         <button id="reload"  class="btn icon" title="Reload">↻</button>
         <button id="inspect" class="btn icon" title="Inspect (toggle)">&lt;/&gt;</button>
-        <button id="settings" class="btn icon" title="Settings">⚙️</button>
         <button id="chrome-toggle" class="btn icon" title="Collapse" aria-label="Collapse">–</button>
         <img id="site-favicon" alt="" src="" referrerpolicy="no-referrer" crossorigin="anonymous" />
         <div class="sugg-wrap">
@@ -760,15 +814,14 @@
     </div>
   </div>
 
-  <!-- Expand FAB (when collapsed) -->
   <button id="chrome-fab" class="btn icon fab" title="Expand" aria-label="Expand">+</button>
 
-  <!-- Home -->
   <main class="home" id="home">
     <div class="hero">
       <h1 class="title">PROJECT TRINITY</h1>
-      <p class="subtitle">1.1.6</p>
+      <p class="subtitle">1.1.4</p>
       <div class="links">
+        <a href="credits.html">Credits</a><span>·</span>
         <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Github</a><span>·</span>
         <a href="https://www.trinity.gt.tc" target="_blank" rel="noopener">TRINITY</a><span>·</span>
         <span>PT © 2025</span>
@@ -776,32 +829,9 @@
     </div>
   </main>
 
-  <!-- Scramjet surface -->
   <iframe id="sj-frame"></iframe>
 
-  <!-- Hooks -->
   <p id="sj-error"></p>
   <pre id="sj-error-code"></pre>
-
-  <!-- Settings: dark-only gradients (12) -->
-  <div id="settings-pop" class="settings-pop" role="dialog" aria-modal="false" aria-labelledby="settings-title">
-    <div class="settings-group">
-      <h4 id="settings-title">Gradient</h4>
-      <div class="settings-row">
-        <div class="swatch" data-value="graphite" style="background:linear-gradient(180deg,#0a0a0a,#0d0d0d 55%,#121212)"></div>
-        <div class="swatch" data-value="abyss"    style="background:linear-gradient(180deg,#0a0f1a,#0b1320 55%,#0c1726)"></div>
-        <div class="swatch" data-value="violet"   style="background:linear-gradient(180deg,#120a1a,#1a0f2b 55%,#23143a)"></div>
-        <div class="swatch" data-value="teal"     style="background:linear-gradient(180deg,#071a1a,#0a2222 55%,#0d2a2a)"></div>
-        <div class="swatch" data-value="slate"    style="background:linear-gradient(180deg,#0c0d10,#101218 55%,#141820)"></div>
-        <div class="swatch" data-value="obsidian" style="background:linear-gradient(180deg,#0b0c0e,#101318 55%,#171b22)"></div>
-        <div class="swatch" data-value="onyx"     style="background:linear-gradient(180deg,#0a0a0b,#0e0f11 55%,#141518)"></div>
-        <div class="swatch" data-value="nebula"   style="background:linear-gradient(180deg,#0b0b14,#121430 55%,#1a1d47)"></div>
-        <div class="swatch" data-value="cyber"    style="background:linear-gradient(180deg,#0a1014,#0b1620 55%,#0d1e2b)"></div>
-        <div class="swatch" data-value="oil"      style="background:linear-gradient(180deg,#0a0a0a,#13100d 55%,#1b1612)"></div>
-        <div class="swatch" data-value="night"    style="background:linear-gradient(180deg,#080a12,#0b0f1a 55%,#0f1524)"></div>
-        <div class="swatch" data-value="carbon"   style="background:linear-gradient(180deg,#0a0a0b,#111213 55%,#191b1d)"></div>
-      </div>
-    </div>
-  </div>
 </body>
 </html>
