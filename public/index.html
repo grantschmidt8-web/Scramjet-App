@@ -10,11 +10,10 @@
   :root{
     --fg:#e6e6e6; --fg-dim:#bdbdbd; --bg:#0a0a0a;
     --grad-1:#0a0a0a; --grad-2:#0d0d0d; --grad-3:#121212;
-    --glass:#111111cc; --stroke:#262626; --accent:#8a8a8a;
+    --stroke:#262626; --accent:#8a8a8a;
     --chrome-h:96px; --radius:14px;
     --shadow:0 10px 26px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.03);
   }
-
   *{ box-sizing:border-box }
   html,body{ height:100% }
   body{
@@ -26,6 +25,7 @@
       linear-gradient(180deg, var(--grad-1) 0%, var(--grad-2) 55%, var(--grad-3) 100%);
   }
 
+  /* Collapse/Expand */
   .chrome-toggle{
     position:fixed; top:10px; right:10px; z-index:10002;
     width:34px; height:34px; border-radius:10px;
@@ -35,12 +35,9 @@
     display:inline-flex; align-items:center; justify-content:center;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.03), 0 6px 18px rgba(0,0,0,.45);
   }
-  .chrome-toggle:hover{
-    border-color:var(--accent);
-    background:linear-gradient(180deg, rgba(34,34,34,.96), rgba(22,22,22,.92));
-    transform:translateY(-1px);
-  }
+  .chrome-toggle:hover{ border-color:var(--accent); transform:translateY(-1px); }
 
+  /* Header chrome */
   .chrome{
     position:fixed; inset:0 0 auto 0; z-index:10000;
     backdrop-filter:saturate(120%) blur(10px);
@@ -59,9 +56,10 @@
   }
   .tabs-wrap::-webkit-scrollbar{ display:none }
 
+  /* Tabs */
   .tab{
     position:relative; display:flex; align-items:center; gap:8px;
-    max-width:240px; white-space:nowrap; user-select:none; cursor:pointer;
+    max-width:260px; white-space:nowrap; user-select:none; cursor:pointer;
     padding:6px 12px;
     border:1px solid var(--stroke);
     border-bottom-color:transparent;
@@ -80,8 +78,11 @@
     box-shadow:0 14px 34px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04) inset;
     z-index:2;
   }
+  .tab .fav{
+    width:16px; height:16px; border-radius:4px; object-fit:cover; flex:0 0 16px;
+    background:#1f1f1f; border:1px solid #2a2a2a;
+  }
   .tab .label{ overflow:hidden; text-overflow:ellipsis; color:var(--fg) }
-
   .tab .close{
     display:inline-flex; align-items:center; justify-content:center;
     width:20px; height:20px; line-height:20px; border-radius:7px;
@@ -95,10 +96,11 @@
     background:linear-gradient(180deg, rgba(26,26,26,.95), rgba(18,18,18,.9));
     cursor:pointer; font-size:16px;
     display:inline-flex; align-items:center; justify-content:center;
-    margin-bottom:-1px; transition:background .12s ease, border-color .12s ease, transform .12s ease;
+    margin-bottom:-1px; transition:.12s;
   }
-  .tab-add:hover{ border-color:var(--accent); background:linear-gradient(180deg, rgba(34,34,34,.96), rgba(22,22,22,.92)); transform:translateY(-1px); }
+  .tab-add:hover{ border-color:var(--accent); transform:translateY(-1px); }
 
+  /* Omnibox row */
   .omnibox{ flex:1 1 auto; display:flex; align-items:center; gap:10px; padding:6px 12px; }
 
   .btn{
@@ -107,10 +109,16 @@
     color:var(--fg); border-radius:10px; height:34px; min-width:34px; padding:0 10px;
     cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.03), 0 6px 18px rgba(0,0,0,.45);
-    transition:transform .12s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease;
+    transition:.12s;
   }
-  .btn:hover{ border-color:var(--accent); background:linear-gradient(180deg, rgba(34,34,34,.96), rgba(22,22,22,.92)); transform:translateY(-1px); box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 10px 26px rgba(0,0,0,.55); }
+  .btn:hover{ border-color:var(--accent); transform:translateY(-1px); }
   .btn.toggled{ outline:2px solid rgba(255,255,255,.08) }
+
+  /* Header favicon (left of bar) */
+  #site-favicon{
+    width:18px; height:18px; border-radius:4px; object-fit:cover;
+    background:#1f1f1f; border:1px solid #2a2a2a;
+  }
 
   .bar{
     flex:1 1 auto; display:flex; align-items:center; gap:8px;
@@ -127,6 +135,7 @@
   }
   #sj-address::placeholder{ color:var(--fg-dim) }
 
+  /* Home */
   .home{ max-width:980px; margin:calc(var(--chrome-h) + 28px) auto 18vh; padding:0 18px; }
   html[data-collapsed="1"] .home{ margin:28px auto 18vh; }
   .hero{
@@ -140,8 +149,10 @@
   .links a{ color:var(--fg); text-decoration:none; border-bottom:1px dashed transparent; padding-bottom:1px }
   .links a:hover{ border-bottom-color:rgba(255,255,255,.12) }
 
+  /* Error hooks hidden */
   #sj-error,#sj-error-code{ display:none }
 
+  /* Proxied surface */
   #sj-frame{
     position:fixed; left:0; right:0; top:var(--chrome-h);
     width:100vw; height:calc(100vh - var(--chrome-h));
@@ -149,6 +160,7 @@
   }
   html[data-collapsed="1"] #sj-frame{ top:0; height:100vh; }
 
+  /* Toast */
   .toast{
     position:fixed; top:10px; right:54px; z-index:10001;
     padding:10px 12px; border-radius:10px; border:1px solid var(--stroke);
@@ -162,6 +174,7 @@
   }
 </style>
 
+<!-- Scramjet runtime & your app scripts -->
 <script src="/scram/scramjet.all.js"></script>
 <script src="/baremux/index.js" defer></script>
 <script src="/epoxy/index.js" defer></script>
@@ -205,6 +218,7 @@
     const home     = document.getElementById('home');
     const reloadBtn= document.getElementById('reload');
     const inspectBtn=document.getElementById('inspect');
+    const headerFav = document.getElementById('site-favicon');
 
     let tabs=[]; let active=-1; let nextId=1; let inspectorOn=false;
 
@@ -213,25 +227,10 @@
       document.body.appendChild(t); setTimeout(()=>t.remove(), 2200);
     }
 
-    const BRAND_MAP = {
-      'tiktok.com':'TikTok','youtube.com':'YouTube','youtu.be':'YouTube',
-      'instagram.com':'Instagram','x.com':'X','twitter.com':'Twitter',
-      'facebook.com':'Facebook','reddit.com':'Reddit','wikipedia.org':'Wikipedia',
-      'github.com':'GitHub','google.com':'Google','openai.com':'OpenAI'
-    };
-    function titleCaseHost(host){
-      const parts = host.split('.'); const core = parts.slice(-2).join('.');
-      if (BRAND_MAP[host]) return BRAND_MAP[host];
-      if (BRAND_MAP[core]) return BRAND_MAP[core];
-      const first = (parts[0]||'').replace(/^www$/i,'') || (parts[parts.length-2]||'');
-      return first.replace(/[-_]+/g,' ').replace(/\b[a-z]/g, m => m.toUpperCase());
-    }
+    /* Brand prettifier (for tab text fallback) */
     function prettyLabel(urlOrQuery){
-      try { const u=new URL(urlOrQuery); return titleCaseHost(u.hostname); }
-      catch {
-        if ((urlOrQuery||'').startsWith('https://www.google.com/search?q=')) return 'Search';
-        return (urlOrQuery && urlOrQuery.length>24) ? urlOrQuery.slice(0,24)+'…' : (urlOrQuery || 'New Tab');
-      }
+      try { const u=new URL(urlOrQuery); const h=u.hostname.replace(/^www\./,''); return h.split('.').slice(-2).join('.').split('.')[0].replace(/[-_]+/g,' ').replace(/\b[a-z]/g,m=>m.toUpperCase()); }
+      catch { return (urlOrQuery||'').slice(0,24) || 'New Tab'; }
     }
 
     function normalizeInput(q){
@@ -241,35 +240,26 @@
       return q.replace(/^http:\/\//i,'https://');
     }
 
-    /* ==== NEW: decode full target (origin + appended path) from proxied URL ==== */
+    /* Decode true target (origin + rest) from proxied href */
     function extractTargetFromScramjet(proxiedHref){
       try{
         const u = new URL(proxiedHref, location.origin);
         const parts = u.pathname.split('/scramjet/');
         if (parts.length < 2) return null;
-        const remainder = parts[1]; // "<encodedOrigin>[/optional/rest]"
+        const remainder = parts[1];
         const cut = remainder.indexOf('/');
         const encodedOrigin = cut === -1 ? remainder : remainder.slice(0, cut);
         const restPath = cut === -1 ? '' : remainder.slice(cut); // includes leading '/'
-
-        const base = decodeURIComponent(encodedOrigin); // e.g. "https://tiktok.com/"
-        // Build final URL: if restPath exists, resolve against base; else just base
+        const base = decodeURIComponent(encodedOrigin);
         let finalUrl;
-        try {
-          finalUrl = new URL(restPath || '/', base).href;
-        } catch {
-          finalUrl = base;
-        }
-        // If the iframe also carries query/hash relevant to target, append them
-        // (Most proxies put query/hash into restPath already; this is defensive)
-        if (u.hash && !finalUrl.includes('#')) {
-          try { const tmp=new URL(finalUrl); tmp.hash=u.hash; finalUrl=tmp.href; } catch {}
-        }
-        return finalUrl.replace(/(?<=https?:\/\/[^/]+)\/{2,}/, '/'); // collapse accidental double slash
+        try { finalUrl = new URL(restPath || '/', base).href; }
+        catch { finalUrl = base; }
+        // keep query/hash if present on outer URL (defensive)
+        if (u.hash && !finalUrl.includes('#')) { try { const tmp=new URL(finalUrl); tmp.hash=u.hash; finalUrl=tmp.href; } catch {} }
+        return finalUrl.replace(/(?<=https?:\/\/[^/]+)\/{2,}/, '/');
       }catch(_){ return null; }
     }
 
-    /* Show EXACT URL in the input; keep tab label pretty */
     function setAddressBar(rawUrl){
       addr.value = rawUrl;
       if (active>=0) tabs[active].el.querySelector('.label').textContent = prettyLabel(rawUrl);
@@ -285,7 +275,6 @@
       if (idx===active || idx<0 || idx>=tabs.length) return;
       if (active>=0) tabs[active].el.classList.remove('active');
       active=idx; tabs[active].el.classList.add('active');
-
       const url=tabs[active].url||'';
       if (url) {
         setAddressBar(url);
@@ -304,9 +293,9 @@
       const id=nextId++;
       const el=document.createElement('div');
       el.className='tab'; el.dataset.id=id;
-      el.innerHTML=`<span class="label">New Tab</span><span class="close" title="Close" aria-label="Close">×</span>`;
+      el.innerHTML=`<img class="fav" alt="" src="" /><span class="label">New Tab</span><span class="close" title="Close" aria-label="Close">×</span>`;
       tabsWrap.insertBefore(el, addBtn);
-      const tab={ id, el, url: initialUrl||'' };
+      const tab={ id, el, url: initialUrl||'', icon:'' };
       if (tab.url) el.querySelector('.label').textContent = prettyLabel(tab.url);
       tabs.push(tab);
       setActive(tabs.length-1);
@@ -358,7 +347,80 @@
       }
     });
 
-    /* Mini Inspector (unchanged) */
+    /* ===== Favicon + Title extraction ===== */
+    function safeURL(href, base){
+      try { return new URL(href, base).href; } catch { return ''; }
+    }
+    function getFaviconFromDoc(doc){
+      try{
+        // prefer high-res icons first
+        const selectors = [
+          'link[rel~="icon"][sizes*="32"]',
+          'link[rel="icon"]',
+          'link[rel="shortcut icon"]',
+          'link[rel="apple-touch-icon"]',
+          'link[rel="apple-touch-icon-precomposed"]'
+        ];
+        for (const sel of selectors){
+          const el = doc.querySelector(sel);
+          if (el && el.href) return safeURL(el.getAttribute('href'), doc.baseURI || doc.URL);
+        }
+        // fallback to /favicon.ico
+        const origin = new URL(doc.URL).origin;
+        return origin + '/favicon.ico';
+      }catch{ return ''; }
+    }
+    function getTitleFromDoc(doc){
+      const t = (doc.title || '').trim();
+      if (t) return t;
+      // fallback to hostname prettified
+      try { return new URL(doc.URL).hostname.replace(/^www\./,''); } catch { return 'New Tab'; }
+    }
+
+    function updateTabMetaFromFrame(){
+      if (active<0) return;
+      let rawTarget = null;
+      // prefer live href (same-origin via proxy)
+      try { rawTarget = frame.contentWindow.location.href; } catch {}
+      if (!rawTarget) rawTarget = frame.getAttribute('src') || '';
+      const target = extractTargetFromScramjet(rawTarget) || addr.dataset.raw || '';
+
+      // Update address + stored url
+      if (target) {
+        tabs[active].url = target;
+        setAddressBar(target);
+      }
+
+      // Try reading inside the page for real title + favicon
+      try {
+        const d = frame.contentDocument;
+        if (d) {
+          const t = getTitleFromDoc(d);
+          const f = getFaviconFromDoc(d);
+          tabs[active].el.querySelector('.label').textContent = t;
+          tabs[active].icon = f || '';
+          const favEl = tabs[active].el.querySelector('.fav');
+          if (favEl) favEl.src = f || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+          if (headerFav) headerFav.src = f || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+        }
+      } catch {
+        // Cross-origin blocked (shouldn't happen under same-origin proxy, but whatever):
+        // derive favicon from target host
+        if (target) {
+          try {
+            const u = new URL(target);
+            const f = u.origin + '/favicon.ico';
+            tabs[active].icon = f;
+            const favEl = tabs[active].el.querySelector('.fav');
+            if (favEl) favEl.src = f;
+            if (headerFav) headerFav.src = f;
+            tabs[active].el.querySelector('.label').textContent = u.hostname.replace(/^www\./,'');
+          } catch {}
+        }
+      }
+    }
+
+    /* Mini Inspector (same as before) */
     function disableInspector(){
       try{
         const w = frame.contentWindow; const d = w.document;
@@ -376,15 +438,12 @@
       catch { toast("Can't inspect this page (cross-origin)."); disableInspector(); return; }
       const w = frame.contentWindow, d = w.document;
       if (d.getElementById('__mini_inspector_overlay__')) { inspectorOn=true; inspectBtn.classList.add('toggled'); return; }
-
       const overlay = d.createElement('div');
       overlay.id='__mini_inspector_overlay__';
       overlay.style.cssText='position:fixed;pointer-events:none;border:1px solid rgba(180,180,180,.9);outline:9999px solid rgba(0,0,0,.50);border-radius:8px;z-index:2147483646;left:0;top:0;width:0;height:0;box-shadow:0 0 0 1px rgba(255,255,255,.04) inset';
-
       const info = d.createElement('div');
       info.style.cssText='position:fixed;pointer-events:none;z-index:2147483647;background:rgba(22,22,22,.96);color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:8px;padding:4px 8px;font:12px "Courier New",monospace;transform:translateY(-26px);box-shadow:0 8px 20px rgba(0,0,0,.55)';
       overlay.appendChild(info);
-
       const panel = d.createElement('div');
       panel.id='__mini_inspector_panel__';
       panel.style.cssText='position:fixed;right:12px;bottom:12px;z-index:2147483647;color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:14px;padding:10px;max-width:48vw;min-width:300px;font:12px "Courier New",monospace;background:linear-gradient(180deg, rgba(24,24,24,.98), rgba(16,16,16,.94));box-shadow:0 16px 40px rgba(0,0,0,.65)';
@@ -405,10 +464,8 @@
         </div>
       `;
       d.body.appendChild(overlay); d.body.appendChild(panel);
-
       let current=null;
       function fmt(el){ if(!el) return ''; const tag=el.tagName.toLowerCase(); const id=el.id?`#${el.id}`:''; const cls=(el.className && typeof el.className==='string')?'.'+el.className.trim().split(/\s+/).join('.') : ''; return `${tag}${id}${cls}`; }
-
       w.__mini_inspector_move = function(ev){
         if (!ev.target || ev.target===overlay || ev.target===panel || panel.contains(ev.target)) return;
         const el=ev.target, r=el.getBoundingClientRect?.(); if(!r) return;
@@ -432,39 +489,6 @@
       d.addEventListener('click',     w.__mini_inspector_click, true);
       d.addEventListener('keydown',   w.__mini_inspector_key, true);
       panel.querySelector('#__mi_close__').onclick = ()=> parent.postMessage({__mini_inspector_cmd:'off'}, '*');
-
-      panel.querySelector('#__mi_apply__').onclick = ()=>{
-        if (!current) return;
-        const html = d.getElementById('__mi_html__').value;
-        try{
-          const tmp = d.createElement('div'); tmp.innerHTML = html;
-          const repl = tmp.firstElementChild; if (!repl) return;
-          current.replaceWith(repl); current = repl;
-          d.getElementById('__mi_sel__').textContent = fmt(current);
-        }catch{ alert('Invalid HTML'); }
-      };
-      panel.querySelector('#__mi_textbtn__').onclick = ()=>{
-        if (!current) return;
-        current.textContent = d.getElementById('__mi_text__').value;
-        d.getElementById('__mi_html__').value = current.outerHTML;
-      };
-      panel.querySelector('#__mi_delete__').onclick = ()=>{
-        if (!current) return;
-        const nxt = current.parentElement || d.body;
-        current.remove(); current = nxt;
-        d.getElementById('__mi_sel__').textContent = fmt(current);
-        try { d.getElementById('__mi_html__').value = current.outerHTML || ''; } catch { d.getElementById('__mi_html__').value=''; }
-        d.getElementById('__mi_text__').value = current.textContent || '';
-      };
-
-      w.addEventListener('message', (e)=>{ if (e.data && e.data.__mini_inspector_cmd==='off') {
-        d.removeEventListener('mousemove', w.__mini_inspector_move, true);
-        d.removeEventListener('click',     w.__mini_inspector_click, true);
-        d.removeEventListener('keydown',   w.__mini_inspector_key, true);
-        overlay.remove(); panel.remove();
-      }});
-
-      inspectorOn=true; inspectBtn.classList.add('toggled');
     }
 
     inspectBtn.addEventListener('click', ()=>{
@@ -480,40 +504,30 @@
       setAddressBar(n);
       frame.style.display = 'block';
       home.style.display  = 'none';
-      setTimeout(()=>{ if (inspectorOn) enableInspector(); }, 400);
+      setTimeout(updateTabMetaFromFrame, 700); // let it load a bit, then pull meta
     }, true);
 
-    /* ==== NEW: keep omnibox synced with SPA navigation inside iframe ==== */
+    /* Keep in sync with SPA nav; also pull title+icon */
     function currentProxiedHref(){
-      try { return frame.contentWindow.location.href || ''; }  // preferred (same-origin via proxy)
-      catch { return frame.getAttribute('src') || ''; }        // fallback
+      try { return frame.contentWindow.location.href || ''; }  // same-origin via proxy
+      catch { return frame.getAttribute('src') || ''; }
     }
-
-    let lastTarget = null;
+    let lastMeta = { url: null, title: null };
     function syncFromFrame(){
       const proxiedHref = currentProxiedHref();
       const target = extractTargetFromScramjet(proxiedHref) || (addr.dataset.raw || null);
-      if (target && target !== lastTarget){
-        lastTarget = target;
+      if (target && target !== lastMeta.url){
+        lastMeta.url = target;
         if (active>=0) tabs[active].url = target;
         setAddressBar(target);
       }
+      // even if URL didn’t change, title/icon might (SPA), so try update
+      updateTabMetaFromFrame();
     }
-    frame.addEventListener('load', syncFromFrame);
-    setInterval(syncFromFrame, 800); // a bit tighter to catch SPA route changes
+    frame.addEventListener('load', ()=>setTimeout(syncFromFrame, 150));
+    setInterval(syncFromFrame, 900);
 
     /* Init */
-    function updateHome(){ const show = (!tabs.length || !tabs[active]?.url); home.style.display = show ? 'block' : 'none'; if (show) { frame.removeAttribute('src'); frame.style.display='none'; } }
-    function addTab(initialUrl){
-      const id=nextId++; const el=document.createElement('div');
-      el.className='tab'; el.dataset.id=id;
-      el.innerHTML=`<span class="label">New Tab</span><span class="close" title="Close" aria-label="Close">×</span>`;
-      tabsWrap.insertBefore(el, addBtn);
-      const tab={ id, el, url: initialUrl||'' };
-      if (tab.url) el.querySelector('.label').textContent = prettyLabel(tab.url);
-      tabs.push(tab); setActive(tabs.length-1);
-    }
-
     addTab(); updateHome(); measureChrome();
 
     document.getElementById('chrome-toggle').addEventListener('click', ()=>{
@@ -525,18 +539,23 @@
 </head>
 
 <body>
+  <!-- Collapse/Expand -->
   <button id="chrome-toggle" class="chrome-toggle" title="Collapse" aria-label="Collapse">–</button>
 
+  <!-- Fixed header -->
   <div class="chrome" role="navigation" aria-label="Browser controls">
+    <!-- Tabs row -->
     <div class="row tabs">
       <div class="tabs-wrap" id="tabs" role="tablist" aria-label="Tabs">
         <button id="tab-add" class="tab-add" title="New tab">+</button>
       </div>
     </div>
+    <!-- Omnibox row -->
     <div class="row">
       <div class="omnibox">
         <button id="reload"  class="btn" title="Reload">↻</button>
         <button id="inspect" class="btn" title="Inspect (toggle)">&lt;/&gt;</button>
+        <img id="site-favicon" alt="" src="" />
         <form id="sj-form" class="bar" autocomplete="off" role="search">
           <input id="sj-search-engine" type="hidden" value="https://www.google.com/search?q=%s" />
           <input id="sj-address" type="text" placeholder="URL or search…" spellcheck="false" inputmode="url" />
@@ -545,11 +564,11 @@
     </div>
   </div>
 
+  <!-- Home -->
   <main class="home" id="home">
     <div class="hero">
       <h1 class="title">PROJECT TRINITY</h1>
-      <p class="subtitle"> ik this looks like i didnt make this but this has taken over a month and the theme is based on nightlite chat system
-        1.1.5</p>
+      <p class="subtitle">1.1.4</p>
       <div class="links">
         <a href="credits.html">Credits</a><span>·</span>
         <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Github</a><span>·</span>
@@ -559,8 +578,10 @@
     </div>
   </main>
 
+  <!-- Proxied surface -->
   <iframe id="sj-frame"></iframe>
 
+  <!-- Hooks -->
   <p id="sj-error"></p>
   <pre id="sj-error-code"></pre>
 </body>
