@@ -120,16 +120,21 @@
     background:linear-gradient(180deg, rgba(26,26,26,.95), rgba(18,18,18,.9)); color:var(--fg);
   }
   .chip[data-active="1"]{ outline:2px solid rgba(255,255,255,.10) }
+
   .swatch{
     width:84px; height:40px; border-radius:10px; border:1px solid var(--stroke); cursor:pointer; position:relative;
     box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
   }
   .swatch[data-active="1"]::after{
-    content:"✓"; position:absolute; right:8px; bottom:6px; font-size:14px; color:#fff; opacity:.9;
+    content:"✓"; position:absolute; right:8px; bottom:6px; font-size:14px; color:#000; opacity:.9;
   }
 
-  /* NEW: ensure settings popover inherits theme colors */
+  /* Inherit theme text color in settings */
   .settings-pop, .settings-pop * { color: inherit; }
+
+  /* Show swatches for current theme only */
+  :root[data-theme="dark"]  .swatch[data-theme="light"]{ display:none; }
+  :root[data-theme="light"] .swatch[data-theme="dark"] { display:none; }
 
   @media (max-width:820px){
     :root{ --chrome-h:124px }
@@ -150,9 +155,10 @@
 <script>
   (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
 
-  const LS_KEY_COLLAPSE = 'pt_chrome_collapsed';
-  const LS_KEY_THEME    = 'pt_theme';
-  const LS_KEY_GRAD     = 'pt_gradient';
+  const LS_KEY_COLLAPSE   = 'pt_chrome_collapsed';
+  const LS_KEY_THEME      = 'pt_theme';
+  const LS_KEY_GRAD_DARK  = 'pt_gradient_dark';
+  const LS_KEY_GRAD_LIGHT = 'pt_gradient_light';
 
   const DARK_FAV = 'data:image/svg+xml;utf8,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
@@ -184,13 +190,21 @@
     }
   };
 
+  /* Gradient palettes by theme */
   const GRADS = {
-    graphite:['#0a0a0a','#0d0d0d','#121212'],
-    abyss:['#0a0f1a','#0b1320','#0c1726'],
-    violet:['#120a1a','#1a0f2b','#23143a'],
-    teal:['#071a1a','#0a2222','#0d2a2a'],
-    slate:['#0c0d10','#101218','#141820'],
-    paper:['#f6f7f9','#eef0f4','#e7eaf0']
+    // dark-side palettes
+    graphite:{ theme:'dark', sw:['#0a0a0a','#0d0d0d','#121212'] },
+    abyss:   { theme:'dark', sw:['#0a0f1a','#0b1320','#0c1726'] },
+    violet:  { theme:'dark', sw:['#120a1a','#1a0f2b','#23143a'] },
+    teal:    { theme:'dark', sw:['#071a1a','#0a2222','#0d2a2a'] },
+    slate:   { theme:'dark', sw:['#0c0d10','#101218','#141820'] },
+
+    // light-side palettes
+    paper:   { theme:'light', sw:['#f6f7f9','#eef0f4','#e7eaf0'] },
+    linen:   { theme:'light', sw:['#faf7f2','#f2eadf','#e7dcc9'] },
+    dawn:    { theme:'light', sw:['#fdf3f0','#f9e7e2','#f0d9d2'] },
+    sky:     { theme:'light', sw:['#f3f8ff','#e7f1ff','#dceaff'] },
+    mint:    { theme:'light', sw:['#f2fbf6','#e5f6ee','#d7efe5'] }
   };
 
   function buildBodyBackground(themeName){
@@ -213,7 +227,7 @@
     });
   }
 
-  /* NEW: repaint settings popover + controls to current theme */
+  /* Settings popover repaint */
   function repaintSettings(themeName){
     const t = THEMES[themeName] || THEMES.dark;
     const pop = document.getElementById('settings-pop');
@@ -231,8 +245,43 @@
     });
   }
 
+  /* Helpers to manage per-theme gradient */
+  function gradientBelongsToTheme(gradName, theme){
+    const g = GRADS[gradName]; return !!g && g.theme === theme;
+  }
+  function defaultGradFor(theme){
+    return theme === 'light' ? 'paper' : 'graphite';
+  }
+  function setGradientVars(name){
+    const g = GRADS[name] || GRADS[defaultGradFor('dark')];
+    document.documentElement.style.setProperty('--grad-1', g.sw[0]);
+    document.documentElement.style.setProperty('--grad-2', g.sw[1]);
+    document.documentElement.style.setProperty('--grad-3', g.sw[2]);
+  }
+
+  /* Public: change gradient (stores under current theme) */
+  function applyGradient(name){
+    const theme = localStorage.getItem(LS_KEY_THEME) || 'dark';
+    const g = GRADS[name];
+    if (!g) return;
+    if (g.theme !== theme) return; // ignore wrong-family pick
+    setGradientVars(name);
+    localStorage.setItem(theme === 'light' ? LS_KEY_GRAD_LIGHT : LS_KEY_GRAD_DARK, name);
+    applyTheme(theme); // repaint chrome with same theme
+  }
+
+  /* Public: change theme (auto-picks that theme's gradient) */
   function applyTheme(name){
     const t = THEMES[name] || THEMES.dark;
+    document.documentElement.dataset.theme = name;
+
+    // pick stored gradient for this theme (fallback to default)
+    const stored = (name === 'light'
+      ? localStorage.getItem(LS_KEY_GRAD_LIGHT)
+      : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(name);
+    const useGrad = gradientBelongsToTheme(stored, name) ? stored : defaultGradFor(name);
+    setGradientVars(useGrad);
+
     const root = document.documentElement.style;
     root.setProperty('--fg', t.fg);
     root.setProperty('--fg-dim', t.dim);
@@ -249,21 +298,20 @@
     document.querySelectorAll('.btn').forEach(n=>n.style.setProperty('background', t.btnBg));
     document.getElementById('sj-frame')?.style.setProperty('background', t.iframeBg);
 
-    /* NEW: include settings pop */
     repaintSettings(name);
-
     localStorage.setItem(LS_KEY_THEME, name);
     repaintTabsForTheme();
   }
 
-  function applyGradient(name){
-    const g = GRADS[name] || GRADS.graphite;
-    const root = document.documentElement.style;
-    root.setProperty('--grad-1', g[0]);
-    root.setProperty('--grad-2', g[1]);
-    root.setProperty('--grad-3', g[2]);
-    applyTheme(localStorage.getItem(LS_KEY_THEME) || 'dark');
-    localStorage.setItem(LS_KEY_GRAD, name);
+  function applyGradientToUIActiveState(){
+    // mark active swatch for current theme
+    const theme = document.documentElement.dataset.theme || 'dark';
+    const current = (theme==='light'
+      ? localStorage.getItem(LS_KEY_GRAD_LIGHT)
+      : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(theme);
+    document.querySelectorAll('.swatch').forEach(el=>{
+      el.dataset.active = (el.dataset.value === current ? '1' : '0');
+    });
   }
 
   function measureChrome(){
@@ -315,9 +363,11 @@
   addEventListener('DOMContentLoaded',()=>{
     // init prefs
     const theme = localStorage.getItem(LS_KEY_THEME) || 'dark';
-    const grad  = localStorage.getItem(LS_KEY_GRAD)  || (theme==='light' ? 'paper' : 'graphite');
-    applyGradient(grad);
-    applyTheme(theme);
+    // ensure per-theme gradient keys exist
+    if (!localStorage.getItem(LS_KEY_GRAD_DARK))  localStorage.setItem(LS_KEY_GRAD_DARK,  'graphite');
+    if (!localStorage.getItem(LS_KEY_GRAD_LIGHT)) localStorage.setItem(LS_KEY_GRAD_LIGHT, 'paper');
+
+    applyTheme(theme); // this also calls setGradientVars for the theme’s stored gradient
     setCollapsed(localStorage.getItem(LS_KEY_COLLAPSE) === '1');
 
     const tabsWrap = document.getElementById('tabs');
@@ -500,10 +550,20 @@
 
     /* Settings popover */
     function openSettingsAtButton(btn){
-      const curTheme = localStorage.getItem(LS_KEY_THEME) || 'dark';
-      const curGrad  = localStorage.getItem(LS_KEY_GRAD)  || 'graphite';
-      document.querySelectorAll('.chip[data-group="theme"]').forEach(el=>{ el.dataset.active = (el.dataset.value===curTheme?'1':'0'); });
-      document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el.dataset.value===curGrad?'1':'0'); });
+      const curTheme = document.documentElement.dataset.theme || 'dark';
+      const curGrad  = (curTheme==='light'
+        ? localStorage.getItem(LS_KEY_GRAD_LIGHT)
+        : localStorage.getItem(LS_KEY_GRAD_DARK)) || defaultGradFor(curTheme);
+
+      // Mark theme chips
+      document.querySelectorAll('.chip[data-group="theme"]').forEach(el=>{
+        el.dataset.active = (el.dataset.value===curTheme?'1':'0');
+      });
+
+      // Mark active gradient swatch (others are auto-hidden by CSS)
+      document.querySelectorAll('.swatch').forEach(el=>{
+        el.dataset.active = (el.dataset.value===curGrad?'1':'0');
+      });
 
       const r = btn.getBoundingClientRect();
       const pop = settingsPop;
@@ -528,20 +588,32 @@
       setTimeout(()=>{ document.addEventListener('mousedown', onDocClick, true); document.addEventListener('keydown', onEsc, true); },0);
     }
 
-    settingsBtn.addEventListener('click', ()=> openSettingsAtButton(settingsBtn));
+    settingsBtn.addEventListener('click', ()=> {
+      openSettingsAtButton(settingsBtn);
+      applyGradientToUIActiveState();
+    });
 
     document.querySelectorAll('.chip[data-group="theme"]').forEach(ch=>{
       ch.addEventListener('click', ()=>{
         const val = ch.dataset.value;
         applyTheme(val);
+        // refresh pop contents/visibility after theme flip
+        repaintSettings(val);
+        applyGradientToUIActiveState();
         document.querySelectorAll('.chip[data-group="theme"]').forEach(el=>{ el.dataset.active = (el===ch?'1':'0'); });
       });
     });
+
     document.querySelectorAll('.swatch').forEach(sw=>{
       sw.addEventListener('click', ()=>{
+        const theme = document.documentElement.dataset.theme || 'dark';
         const val = sw.dataset.value;
-        applyGradient(val);
-        document.querySelectorAll('.swatch').forEach(el=>{ el.dataset.active = (el===sw?'1':'0'); });
+        if (!gradientBelongsToTheme(val, theme)) return;
+        setGradientVars(val);
+        localStorage.setItem(theme==='light' ? LS_KEY_GRAD_LIGHT : LS_KEY_GRAD_DARK, val);
+        // repaint body bg with current theme + new gradient
+        document.body.style.background = buildBodyBackground(theme);
+        applyGradientToUIActiveState();
       });
     });
 
@@ -618,12 +690,18 @@
     <div class="settings-group">
       <h4>Gradient</h4>
       <div class="settings-row">
-        <div class="swatch" data-value="graphite" style="background:linear-gradient(180deg,#0a0a0a,#0d0d0d 55%,#121212)"></div>
-        <div class="swatch" data-value="abyss"    style="background:linear-gradient(180deg,#0a0f1a,#0b1320 55%,#0c1726)"></div>
-        <div class="swatch" data-value="violet"   style="background:linear-gradient(180deg,#120a1a,#1a0f2b 55%,#23143a)"></div>
-        <div class="swatch" data-value="teal"     style="background:linear-gradient(180deg,#071a1a,#0a2222 55%,#0d2a2a)"></div>
-        <div class="swatch" data-value="slate"    style="background:linear-gradient(180deg,#0c0d10,#101218 55%,#141820)"></div>
-        <div class="swatch" data-value="paper"    style="background:linear-gradient(180deg,#f6f7f9,#eef0f4 55%,#e7eaf0)"></div>
+        <!-- Dark set -->
+        <div class="swatch" data-theme="dark" data-value="graphite" style="background:linear-gradient(180deg,#0a0a0a,#0d0d0d 55%,#121212)"></div>
+        <div class="swatch" data-theme="dark" data-value="abyss"    style="background:linear-gradient(180deg,#0a0f1a,#0b1320 55%,#0c1726)"></div>
+        <div class="swatch" data-theme="dark" data-value="violet"   style="background:linear-gradient(180deg,#120a1a,#1a0f2b 55%,#23143a)"></div>
+        <div class="swatch" data-theme="dark" data-value="teal"     style="background:linear-gradient(180deg,#071a1a,#0a2222 55%,#0d2a2a)"></div>
+        <div class="swatch" data-theme="dark" data-value="slate"    style="background:linear-gradient(180deg,#0c0d10,#101218 55%,#141820)"></div>
+        <!-- Light set -->
+        <div class="swatch" data-theme="light" data-value="paper"   style="background:linear-gradient(180deg,#f6f7f9,#eef0f4 55%,#e7eaf0)"></div>
+        <div class="swatch" data-theme="light" data-value="linen"   style="background:linear-gradient(180deg,#faf7f2,#f2eadf 55%,#e7dcc9)"></div>
+        <div class="swatch" data-theme="light" data-value="dawn"    style="background:linear-gradient(180deg,#fdf3f0,#f9e7e2 55%,#f0d9d2)"></div>
+        <div class="swatch" data-theme="light" data-value="sky"     style="background:linear-gradient(180deg,#f3f8ff,#e7f1ff 55%,#dceaff)"></div>
+        <div class="swatch" data-theme="light" data-value="mint"    style="background:linear-gradient(180deg,#f2fbf6,#e5f6ee 55%,#d7efe5)"></div>
       </div>
     </div>
   </div>
