@@ -111,7 +111,7 @@
   addEventListener('resize',measureChrome);
   addEventListener('DOMContentLoaded',measureChrome);
 
-  /* Normalize input to https or search */
+  /* Normalize input to https or search BEFORE your handler runs */
   function normalizeInput(q){
     q=(q||'').trim();
     if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(q) && !q.includes('.')) return 'https://www.google.com/search?q='+encodeURIComponent(q);
@@ -127,26 +127,22 @@
     'github.com':'GitHub','google.com':'Google','openai.com':'OpenAI'
   };
   function titleCaseHost(host){
-    // keep last two labels usually (e.g., sub.example.com -> example.com)
-    const parts = host.split('.'); const core = parts.slice(-2).join('.');
+    const parts = host.split('.');
+    const core  = parts.slice(-2).join('.');
     if (BRAND_MAP[host]) return BRAND_MAP[host];
     if (BRAND_MAP[core]) return BRAND_MAP[core];
-    // Fallback: TitleCase first label
     const first = (parts[0] || '').replace(/^www$/i,'') || (parts[parts.length-2]||'');
-    return first.replace(/[-_]+/g,' ')
-                .replace(/\b[a-z]/g, m => m.toUpperCase());
+    return first.replace(/[-_]+/g,' ').replace(/\b[a-z]/g, m => m.toUpperCase());
   }
   function labelFrom(urlOrQuery){
-    try {
-      const u = new URL(urlOrQuery);
-      return titleCaseHost(u.hostname);
-    } catch {
+    try { const u = new URL(urlOrQuery); return titleCaseHost(u.hostname); }
+    catch {
       if ((urlOrQuery||'').startsWith('https://www.google.com/search?q=')) return 'Search';
       return (urlOrQuery && urlOrQuery.length>24) ? urlOrQuery.slice(0,24)+'…' : (urlOrQuery || 'New Tab');
     }
   }
 
-  /* Tabs + single iframe flow */
+  /* Tabs + single iframe flow (always navigate via your normal submit so the proxied URL is used) */
   addEventListener('DOMContentLoaded',()=>{
     const tabsWrap = document.getElementById('tabs');
     const addBtn   = document.getElementById('tab-add');
@@ -171,9 +167,18 @@
       if (active>=0) tabs[active].el.classList.remove('active');
       active=idx;
       tabs[active].el.classList.add('active');
+
       const url=tabs[active].url||'';
-      if (url) { frame.src=url; frame.style.display='block'; }
       addr.placeholder = url ? labelFrom(url) : 'URL or search…';
+
+      if (url) {
+        // Re-run normal navigation so service worker builds /scramjet/... into #sj-frame
+        addr.value = url;
+        if (form.requestSubmit) form.requestSubmit();
+        else form.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
+      } else {
+        frame.removeAttribute('src'); frame.style.display='none';
+      }
       updateHome();
     }
     function addTab(initialUrl){
@@ -211,11 +216,20 @@
 
     addBtn.addEventListener('click',()=>addTab());
 
-    // Reload button: hard refresh the current iframe URL (if any)
+    // Reload: refresh proxied page (same-origin) or re-run navigation if blank
     reloadBtn.addEventListener('click',()=>{
       if (!tabs.length || active<0) return;
-      const url = tabs[active].url || '';
-      if (url) frame.src = url; // force reload
+      const proxied = frame.getAttribute('src');
+      if (proxied) {
+        try { frame.contentWindow.location.reload(); }
+        catch { frame.src = proxied; }
+      } else {
+        const raw = tabs[active].url || '';
+        if (!raw) return;
+        addr.value = raw;
+        if (form.requestSubmit) form.requestSubmit();
+        else form.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
+      }
     });
 
     // Normalize BEFORE your existing submit handler; remember URL per tab
@@ -245,7 +259,7 @@
         <button id="tab-add" class="tab-add" title="New tab">+</button>
       </div>
     </div>
-    <!-- Row 2: Address (omnibox) under the tabs, Chrome-style -->
+    <!-- Row 2: Address (omnibox) under the tabs -->
     <div class="row">
       <div class="omnibox">
         <button id="reload" class="btn reload" title="Reload">↻</button>
