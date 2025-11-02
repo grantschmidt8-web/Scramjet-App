@@ -39,6 +39,7 @@
   .tab .fav{ width:16px; height:16px; border-radius:4px; object-fit:cover; flex:0 0 16px; background:#1f1f1f; border:1px solid #2a2a2a; }
   .tab .label{ overflow:hidden; text-overflow:ellipsis; color:var(--fg) }
   .tab .close{ display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:7px; color:var(--fg-dim); }
+
   .tab-add{ flex:0 0 auto; width:28px; height:28px; border-radius:50%; border:1px solid var(--stroke);
     color:var(--fg); background:linear-gradient(180deg, rgba(26,26,26,.95), rgba(18,18,18,.9)); cursor:pointer; font-size:16px;
     display:inline-flex; align-items:center; justify-content:center; margin-bottom:-1px; }
@@ -62,14 +63,18 @@
   .subtitle{ margin:0; color:var(--fg-dim); font-size:13px }
   .links{ margin-top:14px; display:flex; gap:12px; align-items:center; font-size:12px; color:var(--fg-dim) }
   .links a{ color:var(--fg); text-decoration:none; border-bottom:1px dashed transparent; padding-bottom:1px }
+
   #sj-error,#sj-error-code{ display:none }
 
-  #sj-frame{ position:fixed; left:0; right:0; top:var(--chrome-h); width:100vw; height:calc(100vh - var(--chrome-h));
-    border:none; background:#0b0b0b; z-index:9999; display:none; }
+  /* Iframe under chrome; hidden on empty tabs */
+  #sj-frame{
+    position:fixed; left:0; right:0; top:var(--chrome-h);
+    width:100vw; height:calc(100vh - var(--chrome-h));
+    border:none; background:#0b0b0b;
+    z-index: 9998;   /* under header (10000) */
+    display:none;
+  }
   html[data-collapsed="1"] #sj-frame{ top:0; height:100vh; }
-
-  .toast{ position:fixed; top:10px; right:54px; z-index:10001; padding:10px 12px; border-radius:10px; border:1px solid var(--stroke);
-    background:linear-gradient(180deg, rgba(20,20,20,.96), rgba(14,14,14,.9)); box-shadow:var(--shadow); color:var(--fg); font-size:12px; }
 
   @media (max-width:820px){ :root{ --chrome-h:124px } .tab{ max-width:180px } }
 </style>
@@ -88,7 +93,7 @@
   const LS_KEY = 'pt_chrome_collapsed';
   const BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
-  /* Build a Scramjet URL for assets to avoid mixed content/CSP */
+  /* Build a Scramjet URL for assets */
   function prox(u){
     try{ return location.origin + '/scramjet/' + encodeURIComponent(u); }
     catch{ return u; }
@@ -145,6 +150,7 @@
       return q.replace(/^http:\/\//i,'https://');
     }
 
+    /* Extract real target URL from Scramjet path */
     function extractTargetFromScramjet(proxiedHref){
       try{
         const u = new URL(proxiedHref, location.origin);
@@ -165,26 +171,45 @@
       addr.value = rawUrl;
       if (active>=0) tabs[active].el.querySelector('.label').textContent = prettyLabel(rawUrl);
     }
+    function clearAddressBar(){
+      addr.value = '';
+      addr.placeholder = 'URL or search…';
+      delete addr.dataset.raw;
+    }
+    function focusAddr(){
+      setTimeout(()=>{
+        addr.focus();
+        try { const L = addr.value.length; addr.setSelectionRange(L, L); } catch {}
+      }, 0);
+    }
 
     function updateHome(){
       const show = (!tabs.length || !tabs[active]?.url);
       home.style.display = show ? 'block' : 'none';
-      if (show) { frame.removeAttribute('src'); frame.style.display='none'; }
+      if (show) {
+        frame.removeAttribute('src');
+        frame.style.display='none';
+      }
     }
 
     function setActive(idx){
       if (idx===active || idx<0 || idx>=tabs.length) return;
       if (active>=0) tabs[active].el.classList.remove('active');
       active=idx; tabs[active].el.classList.add('active');
+
       const url=tabs[active].url||'';
+
       if (url) {
-        setAddressBar(url);
         addr.dataset.raw = url;
+        setAddressBar(url);
         if (form.requestSubmit) form.requestSubmit();
         else form.dispatchEvent(new Event('submit', { bubbles:true, cancelable:true }));
       } else {
-        addr.value=''; addr.placeholder='URL or search…';
-        frame.removeAttribute('src'); frame.style.display='none';
+        clearAddressBar();
+        frame.removeAttribute('src');
+        frame.style.display='none';
+        home.style.display='block';
+        focusAddr();
       }
       updateHome();
       if (inspectorOn) enableInspector();
@@ -194,12 +219,15 @@
       const id=nextId++;
       const el=document.createElement('div');
       el.className='tab'; el.dataset.id=id;
-      el.innerHTML=`<img class="fav" alt="" src="${BLANK}" referrerpolicy="no-referrer" crossorigin="anonymous"/><span class="label">New Tab</span><span class="close" title="Close" aria-label="Close">×</span>`;
+      el.innerHTML=`<img class="fav" alt="" src="${BLANK}" referrerpolicy="no-referrer" crossorigin="anonymous"/>
+                    <span class="label">New Tab</span>
+                    <span class="close" title="Close" aria-label="Close">×</span>`;
       tabsWrap.insertBefore(el, addBtn);
-      const tab={ id, el, url: initialUrl||'', icon:'' };
+      const tab={ id, el, url: (initialUrl || '') };
       if (tab.url) el.querySelector('.label').textContent = prettyLabel(tab.url);
       tabs.push(tab);
-      setActive(tabs.length-1);
+      setActive(tabs.length-1);   // will clear+focus if empty
+      measureChrome();
     }
 
     function closeTabById(id){
@@ -230,7 +258,11 @@
       }
     });
 
-    addBtn.addEventListener('click',()=>addTab());
+    addBtn.addEventListener('click',()=>{
+      setCollapsed(false);   // ensure omnibox visible
+      addTab();
+      focusAddr();
+    });
 
     reloadBtn.addEventListener('click',()=>{
       if (!tabs.length || active<0) return;
@@ -248,13 +280,12 @@
       }
     });
 
-    /* ---------- FAVICON + TITLE (robust, proxied) ---------- */
+    /* ---------- FAVICON + TITLE (proxied, robust) ---------- */
     function safeAbs(href, base){ try { return new URL(href, base).href; } catch { return ''; } }
 
     function collectFaviconsFromDoc(doc){
       const base = doc.baseURI || doc.URL || '';
       const out = [];
-      // Prefer explicit links in doc, largest first
       const linkEls = Array.from(doc.querySelectorAll('link[rel*="icon" i], link[rel="apple-touch-icon" i], link[rel="shortcut icon" i]'));
       linkEls.sort((a,b)=>{
         const sa = parseInt((a.getAttribute('sizes')||'').match(/\d+/)?.[0]||'0',10);
@@ -265,29 +296,18 @@
         const href = el.getAttribute('href');
         if (href) out.push(safeAbs(href, base));
       }
-      // Fallbacks
       try{
         const origin = new URL(base).origin;
-        out.push(origin + '/favicon.ico');
-        out.push(origin + '/favicon.png');
-        out.push(origin + '/apple-touch-icon.png');
+        out.push(origin + '/favicon.ico', origin + '/favicon.png', origin + '/apple-touch-icon.png');
       }catch{}
-      // Dedup
       return [...new Set(out)];
     }
 
     function applyFavicon(candidates){
-      // Try each candidate through the proxy; first that loads wins
       const favImg = headerFav;
-      if (favImg){
-        favImg.referrerPolicy = 'no-referrer';
-        favImg.crossOrigin = 'anonymous';
-      }
+      if (favImg){ favImg.referrerPolicy='no-referrer'; favImg.crossOrigin='anonymous'; }
       const tabImg = tabs[active]?.el.querySelector('.fav');
-      if (tabImg){
-        tabImg.referrerPolicy = 'no-referrer';
-        tabImg.crossOrigin = 'anonymous';
-      }
+      if (tabImg){ tabImg.referrerPolicy='no-referrer'; tabImg.crossOrigin='anonymous'; }
       let i = 0;
       function tryNext(){
         if (!candidates || i >= candidates.length){
@@ -295,8 +315,7 @@
           if (tabImg) tabImg.src = BLANK;
           return;
         }
-        const raw = candidates[i++];            // next real URL
-        const src = prox(raw);                  // proxy it so it loads
+        const raw = candidates[i++], src = prox(raw);
         if (favImg){
           favImg.onerror = tryNext;
           favImg.onload  = ()=>{ if (tabImg) tabImg.src = favImg.src; };
@@ -322,26 +341,19 @@
       if (!rawTarget) rawTarget = frame.getAttribute('src') || '';
       const target = extractTargetFromScramjet(rawTarget) || addr.dataset.raw || '';
 
-      if (target) {
-        tabs[active].url = target;
-        setAddressBar(target);
-      }
+      if (target) { tabs[active].url = target; setAddressBar(target); }
 
       let didDoc=false;
       try {
         const d = frame.contentDocument;
         if (d) {
           didDoc=true;
-          // Title
           const t = getDocTitle(d);
           tabs[active].el.querySelector('.label').textContent = t;
-          // Icons
           const list = collectFaviconsFromDoc(d);
           applyFavicon(list);
         }
-      } catch {
-        // Cross-origin (should be same-origin via proxy, but just in case)
-      }
+      } catch {}
 
       if (!didDoc && target){
         try {
@@ -353,7 +365,7 @@
     }
     /* ------------------------------------------------------- */
 
-    /* Inspector (unchanged core behavior) */
+    /* Mini Inspector */
     function disableInspector(){
       try{
         const w = frame.contentWindow; const d = w.document;
@@ -394,10 +406,8 @@
         </div>
       `;
       d.body.appendChild(overlay); d.body.appendChild(panel);
-
       let current=null;
       function fmt(el){ if(!el) return ''; const tag=el.tagName.toLowerCase(); const id=el.id?`#${el.id}`:''; const cls=(el.className && typeof el.className==='string')?'.'+el.className.trim().split(/\s+/).join('.') : ''; return `${tag}${id}${cls}`; }
-
       w.__mini_inspector_move = function(ev){
         if (!ev.target || ev.target===overlay || ev.target===panel || panel.contains(ev.target)) return;
         const el=ev.target, r=el.getBoundingClientRect?.(); if(!r) return;
