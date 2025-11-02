@@ -19,8 +19,8 @@
     margin:0; color:var(--fg);
     font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans","Liberation Sans";
     background:
-      radial-gradient(1100px 520px at 80% -10%, rgba(140,140,140,.10) 0%, rgba(0,0,0,0) 60%),
-      radial-gradient(900px 480px at -10% 110%, rgba(160,160,160,.08) 0%, rgba(0,0,0,0) 60%),
+      radial-gradient(1100px 520px at 80% -10%, rgba(140,140,140,.10) 0%, rgba(140,140,140,0) 60%),
+      radial-gradient(900px 480px at -10% 110%, rgba(160,160,160,.08) 0%, rgba(160,160,160,0) 60%),
       linear-gradient(180deg, var(--grad-1) 0%, var(--grad-2) 55%, var(--grad-3) 100%);
   }
 
@@ -180,10 +180,6 @@
 </style>
 
 <!-- Runtime/transport -->
-<!-- HARD-SET WISP to your Render backend (Option 1) -->
-<script>
-  window.WISP_URL = 'wss://scramjet-app-50ls.onrender.com/wisp/';
-</script>
 <script src="/scram/scramjet.all.js"></script>
 <script src="/baremux/index.js" defer></script>
 <script src="/epoxy/index.js" defer></script>
@@ -193,6 +189,9 @@
 <script src="index.js" defer></script>
 
 <script>
+  /* Force WISP default over HTTPS */
+  (function(){ if (!('WISP_URL' in window) && location.protocol==='https:') window.WISP_URL='wss://'+location.host+'/wisp/'; })();
+
   /* === Storage keys (dark-only) === */
   const LS_KEY_COLLAPSE = 'pt_chrome_collapsed';
   const LS_KEY_GRAD     = 'pt_gradient_dark';   // single key now
@@ -510,10 +509,132 @@
     frame.addEventListener('load', ()=>setTimeout(updateTabMetaFromFrame, 150));
     setInterval(updateTabMetaFromFrame, 900);
 
-    /* Inspector stub (kept minimal) */
-    function disableInspector(){ inspectorOn=false; document.getElementById('inspect')?.classList.remove('toggled'); }
-    function enableInspector(){ try { void frame.contentDocument; } catch { disableInspector(); return; } /* plug your overlay if you want */ }
-    document.getElementById('inspect').addEventListener('click', ()=>{ if (inspectorOn){ try { frame.contentWindow.postMessage({__mini_inspector_cmd:'off'}, '*'); } catch(_){} disableInspector(); } else { enableInspector(); } });
+    /* ===================== MINI INSPECTOR (FIXED) ===================== */
+    function toast(msg){
+      const t=document.createElement('div');
+      t.style.cssText='position:fixed;top:10px;right:10px;z-index:10001;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(18,18,18,.96);color:#e6e6e6;font:12px/1.2 system-ui;box-shadow:0 10px 26px rgba(0,0,0,.55)';
+      t.textContent=msg; document.body.appendChild(t);
+      setTimeout(()=>t.remove(),2200);
+    }
+    function canAccess(){ try { return !!(frame && frame.contentDocument && frame.contentDocument.documentElement); } catch { return false; } }
+
+    function disableInspector(){
+      if (!canAccess()) { inspectorOn=false; inspectBtn?.classList.remove('toggled'); return; }
+      const w = frame.contentWindow, d = w.document;
+      try{
+        d.querySelector('#__mi_overlay__')?.remove();
+        d.querySelector('#__mi_panel__')?.remove();
+        d.removeEventListener('mousemove', w.__mi_move, true);
+        d.removeEventListener('click',     w.__mi_click, true);
+        d.removeEventListener('keydown',   w.__mi_key,  true);
+        w.__mi_move = w.__mi_click = w.__mi_key = null;
+      }catch{}
+      inspectorOn=false; inspectBtn?.classList.remove('toggled');
+    }
+
+    function enableInspector(){
+      if (!canAccess()) { inspectorOn=false; inspectBtn?.classList.remove('toggled'); toast("Can't inspect this page (cross-origin)."); return; }
+      const w = frame.contentWindow, d = w.document;
+      if (d.getElementById('__mi_overlay__')) { inspectorOn=true; inspectBtn?.classList.add('toggled'); return; }
+
+      const overlay = d.createElement('div');
+      overlay.id='__mi_overlay__';
+      overlay.style.cssText='position:fixed;pointer-events:none;border:1px solid rgba(180,180,180,.9);outline:9999px solid rgba(0,0,0,.50);border-radius:8px;z-index:2147483646;left:0;top:0;width:0;height:0;box-shadow:0 0 0 1px rgba(255,255,255,.04) inset';
+
+      const info = d.createElement('div');
+      info.style.cssText='position:fixed;pointer-events:none;z-index:2147483647;background:rgba(22,22,22,.96);color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:8px;padding:4px 8px;font:12px "Courier New",monospace;transform:translateY(-26px);box-shadow:0 8px 20px rgba(0,0,0,.55)';
+      overlay.appendChild(info);
+
+      const panel = d.createElement('div');
+      panel.id='__mi_panel__';
+      panel.style.cssText='position:fixed;right:12px;bottom:12px;z-index:2147483647;color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:14px;padding:10px;max-width:48vw;min-width:300px;font:12px "Courier New",monospace;background:linear-gradient(180deg, rgba(24,24,24,.98), rgba(16,16,16,.94));box-shadow:0 16px 40px rgba(0,0,0,.65)';
+      panel.innerHTML = `
+        <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <strong>Inspector</strong>
+          <button id="__mi_close__" style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:8px;padding:4px 8px;cursor:pointer">Close</button>
+        </div>
+        <div style="margin-bottom:6px">Selected: <code id="__mi_sel__"></code></div>
+        <label>textContent</label>
+        <textarea id="__mi_text__" style="width:100%;height:70px;background:rgba(18,18,18,.96);color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:10px;margin:4px 0 8px;resize:vertical;"></textarea>
+        <label>outerHTML</label>
+        <textarea id="__mi_html__" style="width:100%;height:150px;background:rgba(18,18,18,.96);color:#e6e6e6;border:1px solid rgba(180,180,180,.45);border-radius:10px;margin:4px 0 10px;resize:vertical;"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="__mi_apply__"  style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Apply HTML</button>
+          <button id="__mi_textbtn__"style="background:transparent;color:#e6e6e6;border:1px solid rgba(180,180,180,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Apply Text</button>
+          <button id="__mi_delete__" style="background:transparent;color:#ff8f8f;border:1px solid rgba(255,143,143,.6);border-radius:10px;padding:6px 10px;cursor:pointer">Delete Node</button>
+        </div>
+      `;
+      d.body.appendChild(overlay); d.body.appendChild(panel);
+
+      let current=null;
+      function fmt(el){
+        if(!el) return '';
+        const tag=el.tagName?.toLowerCase?.()||'';
+        const id=el.id?`#${el.id}`:'';
+        const cls=(el.className && typeof el.className==='string')?'.'+el.className.trim().split(/\s+/).join('.'):'';
+        return `${tag}${id}${cls}`;
+      }
+      w.__mi_move = function(ev){
+        if (!ev.target || ev.target===overlay || ev.target===panel || panel.contains(ev.target)) return;
+        const el=ev.target, r=el.getBoundingClientRect?.(); if(!r) return;
+        overlay.style.left=r.left+'px'; overlay.style.top=r.top+'px'; overlay.style.width=r.width+'px'; overlay.style.height=r.height+'px';
+        info.textContent = fmt(el) + `  ${Math.round(r.width)}×${Math.round(r.height)}`;
+        info.style.left = Math.max(6, Math.min(r.left, d.documentElement.clientWidth - 260)) + 'px';
+        info.style.top  = (r.top - 8) + 'px';
+      };
+      w.__mi_click = function(ev){
+        if (panel.contains(ev.target)) return;
+        ev.preventDefault(); ev.stopPropagation();
+        current = ev.target;
+        d.getElementById('__mi_sel__').textContent = fmt(current);
+        d.getElementById('__mi_text__').value = current.textContent ?? '';
+        try { d.getElementById('__mi_html__').value = current.outerHTML ?? ''; }
+        catch { d.getElementById('__mi_html__').value='<!-- cannot serialize -->'; }
+      };
+      w.__mi_key = function(ev){
+        if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); disableInspector(); }
+      };
+      d.addEventListener('mousemove', w.__mi_move, true);
+      d.addEventListener('click',     w.__mi_click, true);
+      d.addEventListener('keydown',   w.__mi_key,  true);
+      panel.querySelector('#__mi_close__').onclick = ()=> disableInspector();
+
+      panel.querySelector('#__mi_apply__').onclick = ()=>{
+        if (!current) return;
+        const html = d.getElementById('__mi_html__').value;
+        try{
+          const tmp = d.createElement('div'); tmp.innerHTML = html;
+          const repl = tmp.firstElementChild; if (!repl) return;
+          current.replaceWith(repl); current = repl;
+          d.getElementById('__mi_sel__').textContent = fmt(current);
+          d.getElementById('__mi_text__').value = current.textContent ?? '';
+        }catch{ alert('Invalid HTML'); }
+      };
+      panel.querySelector('#__mi_textbtn__').onclick = ()=>{
+        if (!current) return;
+        current.textContent = d.getElementById('__mi_text__').value;
+        try { d.getElementById('__mi_html__').value = current.outerHTML ?? ''; } catch {}
+      };
+      panel.querySelector('#__mi_delete__').onclick = ()=>{
+        if (!current) return;
+        const nxt = current.parentElement || d.body;
+        current.remove(); current = nxt;
+        d.getElementById('__mi_sel__').textContent = fmt(current);
+        try { d.getElementById('__mi_html__').value = current.outerHTML || ''; } catch { d.getElementById('__mi_html__').value=''; }
+        d.getElementById('__mi_text__').value = current.textContent || '';
+      };
+
+      inspectorOn=true; inspectBtn?.classList.add('toggled');
+    }
+
+    inspectBtn.addEventListener('click', ()=>{ if (inspectorOn) disableInspector(); else enableInspector(); });
+    window.addEventListener('keydown', (e)=>{
+      if ((e.ctrlKey||e.metaKey) && e.shiftKey && (e.key==='I' || e.key==='i')){
+        e.preventDefault(); if (inspectorOn) disableInspector(); else enableInspector();
+      }
+    });
+    frame.addEventListener('load', ()=>{ if (inspectorOn){ disableInspector(); setTimeout(()=>enableInspector(),60); } });
+    /* =================== END MINI INSPECTOR (FIXED) =================== */
 
     /* Settings pop (dark-only gradients) */
     function openSettingsAtButton(btn){
@@ -652,6 +773,7 @@
     let activeIndex = -1, currentItems = [];
     function render(list){
       currentItems = list; activeIndex = -1;
+      const suggEl = document.getElementById('omnibox-suggestions');
       suggEl.innerHTML = '';
       if (!list.length){ suggEl.style.display='none'; return; }
       for (let i=0;i<list.length;i++){
@@ -686,6 +808,7 @@
       suggEl.style.display='block';
     }
     function select(i){
+      const suggEl = document.getElementById('omnibox-suggestions');
       const items = [...suggEl.querySelectorAll('li')];
       items.forEach(n=>n.setAttribute('aria-selected','false'));
       if (i>=0 && i<items.length){
@@ -698,7 +821,7 @@
     function apply(i){
       if (i<0 || i>=currentItems.length) return;
       const val = currentItems[i].value;
-      suggEl.style.display='none';
+      document.getElementById('omnibox-suggestions').style.display='none';
       addr.value = val;
       form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', {bubbles:true, cancelable:true}));
     }
@@ -719,6 +842,7 @@
     addr.addEventListener('focus', ()=>{ refresh(addr.value||''); });
 
     addr.addEventListener('keydown', (e)=>{
+      const suggEl = document.getElementById('omnibox-suggestions');
       const items = [...suggEl.querySelectorAll('li')];
       if (!items.length) return;
       if (e.key === 'ArrowDown'){ e.preventDefault(); select( Math.min(items.length-1, activeIndex+1) ); }
@@ -727,7 +851,7 @@
       else if (e.key === 'Tab'){ if (activeIndex>=0){ e.preventDefault(); apply(activeIndex); } }
       else if (e.key === 'Escape'){ suggEl.style.display='none'; }
     });
-    addr.addEventListener('blur', ()=> setTimeout(()=>{ suggEl.style.display='none'; }, 120) );
+    addr.addEventListener('blur', ()=> setTimeout(()=>{ document.getElementById('omnibox-suggestions').style.display='none'; }, 120) );
   });
 </script>
 </head>
@@ -765,9 +889,8 @@
   <main class="home" id="home">
     <div class="hero">
       <h1 class="title">PROJECT TRINITY</h1>
-      <p class="subtitle">1.1.4</p>
+      <p class="subtitle">1.1.6</p>
       <div class="links">
-        <a href="credits.html">Credits</a><span>·</span>
         <a href="https://github.com/MercuryWorkshop" target="_blank" rel="noopener">Github</a><span>·</span>
         <a href="https://www.trinity.gt.tc" target="_blank" rel="noopener">TRINITY</a><span>·</span>
         <span>PT © 2025</span>
