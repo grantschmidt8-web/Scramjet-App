@@ -19,6 +19,7 @@
 	"author": "Mercury Workshop",
 	"license": "GNU AFFERO",
 	"dependencies": {
+		"@mercuryworkshop/bare-server-node": "^1.2.5"
 		"@fastify/static": "^8.2.0",
 		"@mercuryworkshop/bare-mux": "^2.1.7",
 		"@mercuryworkshop/epoxy-transport": "^2.1.28",
