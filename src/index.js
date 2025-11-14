@@ -9,12 +9,9 @@ import { scramjetPath } from "@mercuryworkshop/scramjet/path";
 import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 
-import { createBareServer } from "@mercuryworkshop/bare-server-node";
-
-// Paths
 const publicPath = fileURLToPath(new URL("../public/", import.meta.url));
 
-// Wisp configuration
+// Wisp Configuration
 logging.set_level(logging.NONE);
 Object.assign(wisp.options, {
   allow_udp_streams: false,
@@ -22,23 +19,13 @@ Object.assign(wisp.options, {
   dns_servers: ["1.1.1.3", "1.0.0.3"]
 });
 
-// Create the Bare server (critical for Scramjet proxying)
-const bare = createBareServer("/bare/");
-
-// Fastify Server
 const fastify = Fastify({
   serverFactory: (handler) => {
     return createServer()
       .on("request", (req, res) => {
-        // Remove COOP/COEP since these break iframe proxies
-        // *** DO NOT set Cross-Origin-Opener-Policy or Cross-Origin-Embedder-Policy ***
-        
-        // Route Bare/Scramjet proxy requests
-        if (bare.shouldRoute(req)) {
-          bare.routeRequest(req, res);
-          return;
-        }
-
+        // Enable iframe embedding
+        res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
+        res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
         handler(req, res);
       })
       .on("upgrade", (req, socket, head) => {
@@ -48,12 +35,13 @@ const fastify = Fastify({
   },
 });
 
-// Static asset serving
+// Serve your public files
 fastify.register(fastifyStatic, {
   root: publicPath,
   decorateReply: true,
 });
 
+// Serve Scramjet / epoxy / bare-mux paths
 fastify.register(fastifyStatic, {
   root: scramjetPath,
   prefix: "/scram/",
@@ -72,25 +60,21 @@ fastify.register(fastifyStatic, {
   decorateReply: false,
 });
 
-// 404 handler
+// 404 fallback
 fastify.setNotFoundHandler((req, reply) => {
-  return reply.code(404).type("text/html").sendFile("404.html");
+  return reply.code(404).type('text/html').sendFile('404.html');
 });
 
-// Server listening info
 fastify.server.on("listening", () => {
   const address = fastify.server.address();
   console.log("Listening on:");
   console.log(`\thttp://localhost:${address.port}`);
   console.log(`\thttp://${hostname()}:${address.port}`);
   console.log(
-    `\thttp://${
-      address.family === "IPv6" ? `[${address.address}]` : address.address
-    }:${address.port}`
+    `\thttp://${address.family === "IPv6" ? `[${address.address}]` : address.address}:${address.port}`
   );
 });
 
-// Shutdown handlers
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
@@ -100,7 +84,6 @@ function shutdown() {
   process.exit(0);
 }
 
-// Start server
 let port = parseInt(process.env.PORT || "");
 if (isNaN(port)) port = 8080;
 
