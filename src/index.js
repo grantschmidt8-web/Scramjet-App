@@ -9,10 +9,12 @@ import { scramjetPath } from "@mercuryworkshop/scramjet/path";
 import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 
+import { createBareServer } from "@mercuryworkshop/bare-server-node";
+
+// Paths
 const publicPath = fileURLToPath(new URL("../public/", import.meta.url));
 
-// Wisp Configuration: Refer to the documentation at https://www.npmjs.com/package/@mercuryworkshop/wisp-js
-
+// Wisp configuration
 logging.set_level(logging.NONE);
 Object.assign(wisp.options, {
   allow_udp_streams: false,
@@ -20,24 +22,36 @@ Object.assign(wisp.options, {
   dns_servers: ["1.1.1.3", "1.0.0.3"]
 });
 
+// Create the Bare server (critical for Scramjet proxying)
+const bare = createBareServer("/bare/");
+
+// Fastify Server
 const fastify = Fastify({
-	serverFactory: (handler) => {
-		return createServer()
-			.on("request", (req, res) => {
-				res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-				res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-				handler(req, res);
-			})
-			.on("upgrade", (req, socket, head) => {
-				if (req.url.endsWith("/wisp/")) wisp.routeRequest(req, socket, head);
-				else socket.end();
-			});
-	},
+  serverFactory: (handler) => {
+    return createServer()
+      .on("request", (req, res) => {
+        // Remove COOP/COEP since these break iframe proxies
+        // *** DO NOT set Cross-Origin-Opener-Policy or Cross-Origin-Embedder-Policy ***
+        
+        // Route Bare/Scramjet proxy requests
+        if (bare.shouldRoute(req)) {
+          bare.routeRequest(req, res);
+          return;
+        }
+
+        handler(req, res);
+      })
+      .on("upgrade", (req, socket, head) => {
+        if (req.url.endsWith("/wisp/")) wisp.routeRequest(req, socket, head);
+        else socket.end();
+      });
+  },
 });
 
+// Static asset serving
 fastify.register(fastifyStatic, {
-	root: publicPath,
-	decorateReply: true,
+  root: publicPath,
+  decorateReply: true,
 });
 
 fastify.register(fastifyStatic, {
@@ -47,50 +61,50 @@ fastify.register(fastifyStatic, {
 });
 
 fastify.register(fastifyStatic, {
-	root: epoxyPath,
-	prefix: "/epoxy/",
-	decorateReply: false,
+  root: epoxyPath,
+  prefix: "/epoxy/",
+  decorateReply: false,
 });
 
 fastify.register(fastifyStatic, {
-	root: baremuxPath,
-	prefix: "/baremux/",
-	decorateReply: false,
+  root: baremuxPath,
+  prefix: "/baremux/",
+  decorateReply: false,
 });
 
-fastify.setNotFoundHandler((res, reply) => {
-	return reply.code(404).type('text/html').sendFile('404.html');
-})
+// 404 handler
+fastify.setNotFoundHandler((req, reply) => {
+  return reply.code(404).type("text/html").sendFile("404.html");
+});
 
+// Server listening info
 fastify.server.on("listening", () => {
-	const address = fastify.server.address();
-
-	// by default we are listening on 0.0.0.0 (every interface)
-	// we just need to list a few
-	console.log("Listening on:");
-	console.log(`\thttp://localhost:${address.port}`);
-	console.log(`\thttp://${hostname()}:${address.port}`);
-	console.log(
-		`\thttp://${
-			address.family === "IPv6" ? `[${address.address}]` : address.address
-		}:${address.port}`
-	);
+  const address = fastify.server.address();
+  console.log("Listening on:");
+  console.log(`\thttp://localhost:${address.port}`);
+  console.log(`\thttp://${hostname()}:${address.port}`);
+  console.log(
+    `\thttp://${
+      address.family === "IPv6" ? `[${address.address}]` : address.address
+    }:${address.port}`
+  );
 });
 
+// Shutdown handlers
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
 function shutdown() {
-	console.log("SIGTERM signal received: closing HTTP server");
-	fastify.close();
-	process.exit(0);
+  console.log("SIGTERM signal received: closing HTTP server");
+  fastify.close();
+  process.exit(0);
 }
 
+// Start server
 let port = parseInt(process.env.PORT || "");
-
 if (isNaN(port)) port = 8080;
 
 fastify.listen({
-	port: port,
-	host: "0.0.0.0",
+  port: port,
+  host: "0.0.0.0",
 });
